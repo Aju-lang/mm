@@ -2,51 +2,51 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import html2canvas from 'html2canvas';
 import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
 
-// Isolated input component to prevent re-render issues
-const StableInput = React.memo(({ 
-  value, 
+// Ref-based input component that doesn't use React state for the value
+const UncontrolledInput = React.forwardRef(({ 
+  defaultValue = '',
   onChange, 
   placeholder, 
   type = "text",
   required = false,
   className = "input"
-}) => {
-  const [localValue, setLocalValue] = useState(value);
-  const [isFocused, setIsFocused] = useState(false);
+}, ref) => {
+  const inputRef = useRef(null);
   
-  // Sync with parent value when not focused
   useEffect(() => {
-    if (!isFocused) {
-      setLocalValue(value);
+    if (ref) {
+      ref.current = inputRef.current;
     }
-  }, [value, isFocused]);
+  }, [ref]);
   
   const handleChange = useCallback((e) => {
-    const newValue = e.target.value;
-    setLocalValue(newValue);
-    onChange(newValue);
+    const value = e.target.value;
+    console.log('🔤 Uncontrolled input changed:', value);
+    if (onChange) {
+      onChange(value);
+    }
   }, [onChange]);
-  
-  const handleFocus = useCallback(() => {
-    setIsFocused(true);
-  }, []);
-  
-  const handleBlur = useCallback(() => {
-    setIsFocused(false);
-  }, []);
   
   return (
     <input
+      ref={inputRef}
       type={type}
       required={required}
       className={className}
-      value={localValue}
+      defaultValue={defaultValue}
       onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
       placeholder={placeholder}
       autoComplete="off"
       spellCheck="false"
+      style={{ outline: 'none' }}
+      onFocus={(e) => {
+        e.target.style.outline = '2px solid #3B82F6';
+        console.log('🎯 Input focused');
+      }}
+      onBlur={(e) => {
+        e.target.style.outline = '';
+        console.log('👋 Input blurred');
+      }}
     />
   );
 });
@@ -73,6 +73,9 @@ const EnhancedCompetitionManager = () => {
   });
   
   const posterRef = useRef(null);
+  const nameInputRef = useRef(null);
+  const descriptionInputRef = useRef(null);
+  const venueInputRef = useRef(null);
   
   // Debug: Track what causes re-renders
   useEffect(() => {
@@ -180,8 +183,24 @@ const EnhancedCompetitionManager = () => {
     }
   }, []);
 
-  const handleAddCompetition = (e) => {
+  const handleAddCompetition = async (e) => {
     e.preventDefault();
+    
+    console.log('🚀 Adding competition...');
+    
+    // Get values from refs instead of state to avoid re-render issues
+    const competitionName = nameInputRef.current?.value || '';
+    const competitionDescription = descriptionInputRef.current?.value || newCompetition.description;
+    const competitionVenue = venueInputRef.current?.value || newCompetition.venue;
+    
+    console.log('📋 Competition data:', {
+      name: competitionName,
+      description: competitionDescription,
+      venue: competitionVenue,
+      category: newCompetition.category,
+      date: newCompetition.date,
+      time: newCompetition.time
+    });
     
     let participants = [];
     
@@ -228,15 +247,20 @@ const EnhancedCompetitionManager = () => {
     }
     
     const competition = {
-      ...newCompetition,
+      name: competitionName,
+      description: competitionDescription,
+      category: newCompetition.category,
+      date: newCompetition.date,
+      time: newCompetition.time,
+      venue: competitionVenue,
       participants,
       status: 'upcoming',
       results: []
     };
     
-    delete competition.participantNames;
+    console.log('🎯 Final competition object:', competition);
     
-    hybridStorage.addCompetition(competition);
+    await hybridStorage.addCompetition(competition);
     console.log('Added competition with participants:', competition.participants);
     
     // Reset form
@@ -249,10 +273,21 @@ const EnhancedCompetitionManager = () => {
       venue: '',
       participantNames: ''
     });
+    
+    // Clear input refs
+    if (nameInputRef.current) nameInputRef.current.value = '';
+    if (descriptionInputRef.current) descriptionInputRef.current.value = '';
+    if (venueInputRef.current) venueInputRef.current.value = '';
+    
     setSelectedStudents([]);
     setInputMethod('checkboxes');
     setShowAddForm(false);
-    loadData();
+    
+    // Reload data and force sync across devices
+    await loadData();
+    await hybridStorage.forceSync();
+    
+    console.log('✅ Competition added and synced!');
   };
 
   const handleDeleteCompetition = async (id) => {
@@ -392,14 +427,15 @@ const EnhancedCompetitionManager = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Competition Name</label>
-                <StableInput
+                <UncontrolledInput
+                  ref={nameInputRef}
                   type="text"
                   required
                   className="input"
-                  value={newCompetition.name}
+                  defaultValue={newCompetition.name}
                   onChange={useCallback((value) => {
                     console.log('📝 Competition name changing to:', value);
-                    setNewCompetition(prev => ({...prev, name: value}));
+                    // Don't update state immediately - only on form submit
                   }, [])}
                   placeholder="e.g., Coding Challenge"
                 />
