@@ -57,7 +57,7 @@ const EnhancedCompetitionManager = () => {
             studentCode: student.code,
             team: student.team,
             code: '',
-            registered: false,
+            registered: true,
             reported: false,
             prize: '',
             customPoints: ''
@@ -77,7 +77,7 @@ const EnhancedCompetitionManager = () => {
         studentCode: '',
         team: '',
         code: '',
-        registered: false,
+        registered: true,
         reported: false,
         prize: '',
         customPoints: ''
