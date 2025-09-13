@@ -87,97 +87,16 @@ export const initializeData = () => {
 
   // Initialize competitions if not exists
   if (!localStorage.getItem(STORAGE_KEYS.COMPETITIONS)) {
-    const dummyCompetitions = [
-      {
-        id: 1,
-        name: 'Coding Challenge',
-        description: 'Competitive programming contest',
-        category: 'Technical',
-        date: '2025-09-19',
-        time: '10:00 AM',
-        venue: 'Computer Lab 1',
-        maxParticipants: 50,
-        participants: [],
-        results: [],
-        status: 'upcoming'
-      },
-      {
-        id: 2,
-        name: 'Web Design Contest',
-        description: 'Create stunning web interfaces',
-        category: 'Technical',
-        date: '2025-09-19',
-        time: '02:00 PM',
-        venue: 'Computer Lab 2',
-        maxParticipants: 30,
-        participants: [],
-        results: [],
-        status: 'upcoming'
-      },
-      {
-        id: 3,
-        name: 'Dance Battle',
-        description: 'Showcase your dance moves',
-        category: 'Cultural',
-        date: '2025-09-20',
-        time: '06:00 PM',
-        venue: 'Main Auditorium',
-        maxParticipants: 100,
-        participants: [],
-        results: [],
-        status: 'upcoming'
-      },
-      {
-        id: 4,
-        name: 'Quiz Championship',
-        description: 'Test your general knowledge',
-        category: 'Academic',
-        date: '2025-09-20',
-        time: '11:00 AM',
-        venue: 'Seminar Hall',
-        maxParticipants: 60,
-        participants: [],
-        results: [],
-        status: 'upcoming'
-      },
-      {
-        id: 5,
-        name: 'Photography Contest',
-        description: 'Capture the perfect moment',
-        category: 'Creative',
-        date: '2025-09-20',
-        time: '09:00 AM',
-        venue: 'Campus Grounds',
-        maxParticipants: 40,
-        participants: [],
-        results: [],
-        status: 'upcoming'
-      }
-    ];
-    localStorage.setItem(STORAGE_KEYS.COMPETITIONS, JSON.stringify(dummyCompetitions));
+    // Start with empty competitions array - admin will add their own
+    const emptyCompetitions = [];
+    localStorage.setItem(STORAGE_KEYS.COMPETITIONS, JSON.stringify(emptyCompetitions));
   }
 
   // Initialize announcements if not exists
   if (!localStorage.getItem(STORAGE_KEYS.ANNOUNCEMENTS)) {
-    const dummyAnnouncements = [
-      {
-        id: 1,
-        title: 'Registration Open',
-        message: 'Registration for TechFest 2024 is now open! Register before October 10th.',
-        type: 'info',
-        createdAt: new Date().toISOString(),
-        active: true
-      },
-      {
-        id: 2,
-        title: 'Venue Update',
-        message: 'Dance Battle venue has been changed to Main Auditorium.',
-        type: 'warning',
-        createdAt: new Date().toISOString(),
-        active: true
-      }
-    ];
-    localStorage.setItem(STORAGE_KEYS.ANNOUNCEMENTS, JSON.stringify(dummyAnnouncements));
+    // Start with empty announcements array - admin will add their own
+    const emptyAnnouncements = [];
+    localStorage.setItem(STORAGE_KEYS.ANNOUNCEMENTS, JSON.stringify(emptyAnnouncements));
   }
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { hybridStorage, updateStudentRecords, forceInitializeStudents } from '../../utils/hybridStorage';
+import { hybridStorage, updateStudentRecords, forceInitializeStudents, clearAllCompetitionsAndAnnouncements } from '../../utils/hybridStorage';
 import DataReset from './DataReset';
 
 const AdminDashboard = () => {
@@ -128,6 +128,7 @@ const AdminDashboard = () => {
   });
 
   const [isInitializingStudents, setIsInitializingStudents] = useState(false);
+  const [isClearingCompetitions, setIsClearingCompetitions] = useState(false);
 
   useEffect(() => {
     const loadFestivalData = async () => {
@@ -156,6 +157,24 @@ const AdminDashboard = () => {
       alert('❌ Error initializing students. Check console for details.');
     } finally {
       setIsInitializingStudents(false);
+    }
+  };
+
+  const handleClearCompetitions = async () => {
+    if (!window.confirm('This will delete ALL existing competitions and announcements. Are you sure? This will give you a fresh start.')) {
+      return;
+    }
+
+    setIsClearingCompetitions(true);
+    try {
+      await clearAllCompetitionsAndAnnouncements();
+      await loadDashboardData(); // Refresh the dashboard
+      alert('✅ All competitions and announcements cleared successfully!');
+    } catch (error) {
+      console.error('Error clearing competitions:', error);
+      alert('❌ Error clearing competitions. Check console for details.');
+    } finally {
+      setIsClearingCompetitions(false);
     }
   };
 
@@ -353,6 +372,33 @@ const AdminDashboard = () => {
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isInitializingStudents ? 'Initializing Students...' : 'Initialize Students in Firebase'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Clear Default Competitions */}
+          <div className="mt-6">
+            <div className="card bg-yellow-50 border-yellow-200">
+              <div className="flex items-start space-x-4">
+                <div className="p-2 bg-yellow-100 rounded-full">
+                  <span className="text-yellow-600 text-xl">🧹</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-yellow-900 mb-2">
+                    Clear All Competitions & Announcements
+                  </h3>
+                  <p className="text-sm text-yellow-700 mb-4">
+                    If you see competitions you didn't add, click this to remove all existing competitions and announcements. This gives you a fresh start to add only your own events.
+                  </p>
+                  
+                  <button
+                    onClick={handleClearCompetitions}
+                    disabled={isClearingCompetitions}
+                    className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isClearingCompetitions ? 'Clearing All...' : 'Clear All Competitions & Announcements'}
                   </button>
                 </div>
               </div>

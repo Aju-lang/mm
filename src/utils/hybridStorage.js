@@ -76,14 +76,21 @@ const syncLocalToFirebase = async () => {
       }
     }
 
-    // Sync competitions
+    // Sync competitions (only if there are actual competitions to sync)
     const localCompetitions = localStorageUtils.getCompetitions();
     const firebaseCompetitions = await competitionsService.getAll();
     
-    if (firebaseCompetitions.length === 0 && localCompetitions.length > 0) {
-      console.log('No competitions in Firebase, migrating from localStorage...');
+    // Only sync if there are competitions in localStorage and they're different from Firebase
+    if (localCompetitions.length > 0) {
       for (const localCompetition of localCompetitions) {
-        await competitionsService.create(localCompetition);
+        const firebaseCompetition = firebaseCompetitions.find(c => c.id === localCompetition.id);
+        if (!firebaseCompetition) {
+          await competitionsService.create(localCompetition);
+          console.log(`Added competition: ${localCompetition.name}`);
+        } else if (JSON.stringify(localCompetition) !== JSON.stringify(firebaseCompetition)) {
+          await competitionsService.update(firebaseCompetition.id, localCompetition);
+          console.log(`Updated competition: ${localCompetition.name}`);
+        }
       }
     }
 
@@ -556,6 +563,33 @@ export const forceInitializeStudents = async () => {
     return localStudents;
   } catch (error) {
     console.error('Error force initializing students:', error);
+    throw error;
+  }
+};
+
+// Clear all competitions and announcements (useful for fresh start)
+export const clearAllCompetitionsAndAnnouncements = async () => {
+  try {
+    console.log('Clearing all competitions and announcements...');
+    
+    // Clear from Firebase
+    const competitions = await competitionsService.getAll();
+    for (const competition of competitions) {
+      await competitionsService.delete(competition.id);
+    }
+    
+    const announcements = await announcementsService.getAll();
+    for (const announcement of announcements) {
+      await announcementsService.delete(announcement.id);
+    }
+    
+    // Clear from localStorage
+    localStorageUtils.setCompetitions([]);
+    localStorageUtils.setAnnouncements([]);
+    
+    console.log('All competitions and announcements cleared successfully');
+  } catch (error) {
+    console.error('Error clearing competitions and announcements:', error);
     throw error;
   }
 };
