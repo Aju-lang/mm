@@ -1,8 +1,59 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import html2canvas from 'html2canvas';
 import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
 
+// Isolated input component to prevent re-render issues
+const StableInput = React.memo(({ 
+  value, 
+  onChange, 
+  placeholder, 
+  type = "text",
+  required = false,
+  className = "input"
+}) => {
+  const [localValue, setLocalValue] = useState(value);
+  const [isFocused, setIsFocused] = useState(false);
+  
+  // Sync with parent value when not focused
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalValue(value);
+    }
+  }, [value, isFocused]);
+  
+  const handleChange = useCallback((e) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+    onChange(newValue);
+  }, [onChange]);
+  
+  const handleFocus = useCallback(() => {
+    setIsFocused(true);
+  }, []);
+  
+  const handleBlur = useCallback(() => {
+    setIsFocused(false);
+  }, []);
+  
+  return (
+    <input
+      type={type}
+      required={required}
+      className={className}
+      value={localValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      placeholder={placeholder}
+      autoComplete="off"
+      spellCheck="false"
+    />
+  );
+});
+
 const EnhancedCompetitionManager = () => {
+  console.log('🔄 EnhancedCompetitionManager rendering...');
+  
   const [competitions, setCompetitions] = useState([]);
   const [students, setStudents] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -22,22 +73,48 @@ const EnhancedCompetitionManager = () => {
   });
   
   const posterRef = useRef(null);
+  
+  // Debug: Track what causes re-renders
+  useEffect(() => {
+    console.log('🔍 State changed - competitions:', competitions.length);
+  }, [competitions]);
+  
+  useEffect(() => {
+    console.log('🔍 State changed - students:', students.length);
+  }, [students]);
+  
+  useEffect(() => {
+    console.log('🔍 State changed - showAddForm:', showAddForm);
+  }, [showAddForm]);
+  
+  useEffect(() => {
+    console.log('🔍 State changed - newCompetition:', newCompetition);
+  }, [newCompetition]);
 
   useEffect(() => {
+    console.log('🚀 Initial data load');
     loadData();
-    
-    // Don't set up listeners if form is open to prevent focus issues
-    if (showAddForm) {
+  }, []); // Only run once on mount
+  
+  // Separate useEffect for listeners to avoid conflicts
+  useEffect(() => {
+    // Completely disable listeners when form is open
+    if (showAddForm || isTyping) {
+      console.log('🔇 Listeners disabled - form open or typing');
       return;
     }
+    
+    console.log('🔊 Setting up Firebase listeners');
     
     // Set up real-time listeners for multi-device sync with debouncing
     let competitionUpdateTimeout;
     let studentUpdateTimeout;
     
     const unsubscribeCompetitions = hybridStorage.onCompetitionsChange((competitionsData) => {
+      console.log('🔄 Firebase competitions changed');
       // Skip updates if user is typing to prevent focus loss
       if (isTyping || showAddForm) {
+        console.log('🔇 Skipping competition update - form active');
         return;
       }
       
@@ -47,16 +124,19 @@ const EnhancedCompetitionManager = () => {
         setCompetitions(prev => {
           // Only update if data actually changed to prevent unnecessary re-renders
           if (JSON.stringify(prev) !== JSON.stringify(competitionsData)) {
+            console.log('📊 Updating competitions from Firebase');
             return competitionsData;
           }
           return prev;
         });
-      }, 300); // Increased debounce to 300ms
+      }, 500); // Increased debounce to 500ms
     });
     
     const unsubscribeStudents = hybridStorage.onStudentsChange((studentsData) => {
+      console.log('🔄 Firebase students changed');
       // Skip updates if form is open
-      if (showAddForm) {
+      if (showAddForm || isTyping) {
+        console.log('🔇 Skipping student update - form active');
         return;
       }
       
@@ -66,14 +146,16 @@ const EnhancedCompetitionManager = () => {
         setStudents(prev => {
           // Only update if data actually changed to prevent unnecessary re-renders
           if (JSON.stringify(prev) !== JSON.stringify(studentsData)) {
+            console.log('👥 Updating students from Firebase');
             return studentsData;
           }
           return prev;
         });
-      }, 300); // Increased debounce to 300ms
+      }, 500); // Increased debounce to 500ms
     });
     
     return () => {
+      console.log('🧹 Cleaning up Firebase listeners');
       clearTimeout(competitionUpdateTimeout);
       clearTimeout(studentUpdateTimeout);
       unsubscribeCompetitions();
@@ -81,12 +163,14 @@ const EnhancedCompetitionManager = () => {
     };
   }, [showAddForm, isTyping]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
+      console.log('🔄 Loading data in EnhancedCompetitionManager...');
       const [competitionsData, studentsData] = await Promise.all([
         hybridStorage.getCompetitions(),
         hybridStorage.getStudents()
       ]);
+      console.log('📊 Loaded:', { competitions: competitionsData.length, students: studentsData.length });
       setCompetitions(competitionsData);
       setStudents(studentsData);
       // Update student records automatically
@@ -94,7 +178,7 @@ const EnhancedCompetitionManager = () => {
     } catch (error) {
       console.error('Error loading data:', error);
     }
-  };
+  }, []);
 
   const handleAddCompetition = (e) => {
     e.preventDefault();
@@ -308,32 +392,16 @@ const EnhancedCompetitionManager = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Competition Name</label>
-                <input
+                <StableInput
                   type="text"
                   required
                   className="input"
                   value={newCompetition.name}
-                  onChange={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const value = e.target.value;
+                  onChange={useCallback((value) => {
+                    console.log('📝 Competition name changing to:', value);
                     setNewCompetition(prev => ({...prev, name: value}));
-                  }}
-                  onFocus={(e) => {
-                    setIsTyping(true);
-                    e.target.style.outline = '2px solid #3B82F6';
-                  }}
-                  onBlur={(e) => {
-                    setIsTyping(false);
-                    e.target.style.outline = '';
-                  }}
-                  onKeyDown={() => setIsTyping(true)}
-                  onKeyUp={() => {
-                    setTimeout(() => setIsTyping(false), 500);
-                  }}
+                  }, [])}
                   placeholder="e.g., Coding Challenge"
-                  autoComplete="off"
-                  spellCheck="false"
                 />
               </div>
               
