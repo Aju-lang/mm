@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCompetitions, getCompetitionsByCategory } from '../../utils/localStorage';
+import hybridStorage from '../../utils/hybridStorage';
 
 const CompetitionsList = () => {
   const [competitions, setCompetitions] = useState([]);
@@ -9,11 +9,21 @@ const CompetitionsList = () => {
 
   useEffect(() => {
     loadCompetitions();
+    
+    // Set up real-time listener for competition updates
+    const unsubscribeCompetitions = hybridStorage.onCompetitionsChange((data) => {
+      console.log('🏆 CompetitionsList: Competitions updated via Firebase real-time', data.length);
+      loadCompetitions();
+    });
+
+    return () => {
+      unsubscribeCompetitions();
+    };
   }, []);
 
-  const loadCompetitions = () => {
-    const allCompetitions = getCompetitions();
-    const categorized = getCompetitionsByCategory();
+  const loadCompetitions = async () => {
+    const allCompetitions = await hybridStorage.getCompetitions();
+    const categorized = await hybridStorage.getCompetitionsByCategory();
     setCompetitions(allCompetitions);
     setCompetitionsByCategory(categorized);
   };

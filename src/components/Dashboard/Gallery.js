@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getGallery } from '../../utils/localStorage';
+import hybridStorage from '../../utils/hybridStorage';
 
 const Gallery = () => {
   const [images, setImages] = useState([]);
@@ -8,10 +8,20 @@ const Gallery = () => {
 
   useEffect(() => {
     loadImages();
+    
+    // Set up real-time listener for gallery updates
+    const unsubscribeGallery = hybridStorage.onGalleryChange((data) => {
+      console.log('🖼️ Gallery: Images updated via Firebase real-time', data.length);
+      loadImages();
+    });
+
+    return () => {
+      unsubscribeGallery();
+    };
   }, []);
 
-  const loadImages = () => {
-    const galleryImages = getGallery();
+  const loadImages = async () => {
+    const galleryImages = await hybridStorage.getGallery();
     
     // If no uploaded images, show some default placeholder images
     if (galleryImages.length === 0) {

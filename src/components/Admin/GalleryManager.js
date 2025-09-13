@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getGallery, addGalleryImage, deleteGalleryImage } from '../../utils/localStorage';
+import hybridStorage from '../../utils/hybridStorage';
 
 const GalleryManager = () => {
   const [images, setImages] = useState([]);
@@ -16,8 +16,8 @@ const GalleryManager = () => {
     loadImages();
   }, []);
 
-  const loadImages = () => {
-    const galleryImages = getGallery();
+  const loadImages = async () => {
+    const galleryImages = await hybridStorage.getGallery();
     setImages(galleryImages);
   };
 
@@ -66,22 +66,44 @@ const GalleryManager = () => {
         fileSize: selectedFile.size
       };
 
-      addGalleryImage(imageData);
-      
-      // Reset form
-      setUploadData({ title: '', category: 'Events', description: '' });
-      setSelectedFile(null);
-      setPreviewUrl('');
-      setShowUploadModal(false);
-      loadImages();
+      try {
+        await hybridStorage.addGalleryImage(imageData);
+        console.log('✅ Gallery image added successfully');
+        
+        // Force immediate sync to Firebase for cross-device visibility
+        console.log('🔄 Forcing sync to Firebase...');
+        await hybridStorage.forceSync();
+        console.log('✅ Sync to Firebase completed');
+        
+        // Reset form
+        setUploadData({ title: '', category: 'Events', description: '' });
+        setSelectedFile(null);
+        setPreviewUrl('');
+        setShowUploadModal(false);
+        loadImages();
+      } catch (error) {
+        console.error('❌ Error uploading image:', error);
+        alert(`❌ Error uploading image: ${error.message}`);
+      }
     };
     reader.readAsDataURL(selectedFile);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this image?')) {
-      deleteGalleryImage(id);
-      loadImages();
+      try {
+        await hybridStorage.deleteGalleryImage(id);
+        console.log('✅ Gallery image deleted successfully');
+        
+        // Force immediate sync to Firebase
+        await hybridStorage.forceSync();
+        console.log('✅ Delete synced to Firebase');
+        
+        loadImages();
+      } catch (error) {
+        console.error('❌ Error deleting image:', error);
+        alert(`❌ Error deleting image: ${error.message}`);
+      }
     }
   };
 

@@ -214,6 +214,21 @@ export const hybridStorage = {
     return localStorageUtils.getCompetitions();
   },
 
+  async getCompetitionsByCategory() {
+    if (useFirebase && isOnline) {
+      try {
+        const competitions = await competitionsService.getAll();
+        // Cache in localStorage
+        localStorageUtils.setCompetitions(competitions);
+        return localStorageUtils.getCompetitionsByCategory();
+      } catch (error) {
+        console.error('Firebase error, using localStorage:', error);
+        return localStorageUtils.getCompetitionsByCategory();
+      }
+    }
+    return localStorageUtils.getCompetitionsByCategory();
+  },
+
   async addCompetition(competition) {
     // Always update localStorage first
     console.log('💾 Saving competition to localStorage:', competition.name);
@@ -277,6 +292,21 @@ export const hybridStorage = {
     return localStorageUtils.getAnnouncements();
   },
 
+  async getGallery() {
+    if (useFirebase && isOnline) {
+      try {
+        const gallery = await galleryService.getAll();
+        // Cache in localStorage
+        localStorageUtils.setGallery(gallery);
+        return gallery;
+      } catch (error) {
+        console.error('Firebase error, using localStorage:', error);
+        return localStorageUtils.getGallery();
+      }
+    }
+    return localStorageUtils.getGallery();
+  },
+
   async addAnnouncement(announcement) {
     localStorageUtils.addAnnouncement(announcement);
     
@@ -331,14 +361,20 @@ export const hybridStorage = {
   },
 
   async addGalleryImage(image) {
+    console.log('💾 Saving gallery image to localStorage:', image.title);
     localStorageUtils.addGalleryImage(image);
     
     if (useFirebase && isOnline) {
       try {
+        console.log('☁️ Saving gallery image to Firebase:', image.title);
         await galleryService.create(image);
+        console.log('✅ Gallery image saved to Firebase successfully');
       } catch (error) {
-        console.error('Firebase error, data saved locally:', error);
+        console.error('❌ Firebase error saving gallery image, data saved locally:', error);
+        throw error; // Re-throw to let caller know about Firebase issues
       }
+    } else {
+      console.warn('⚠️ Firebase offline or disabled, gallery image saved locally only');
     }
     return image;
   },
@@ -641,6 +677,55 @@ export const clearAllCompetitionsAndAnnouncements = async () => {
   } catch (error) {
     console.error('Error clearing competitions and announcements:', error);
     throw error;
+  },
+
+  // Real-time listeners for cross-device sync
+  onStudentsChange(callback) {
+    if (useFirebase && isOnline) {
+      try {
+        return studentsService.onSnapshot(callback);
+      } catch (error) {
+        console.error('Error setting up students listener:', error);
+        return () => {}; // Return empty unsubscribe function
+      }
+    }
+    return () => {}; // Return empty unsubscribe function
+  },
+
+  onCompetitionsChange(callback) {
+    if (useFirebase && isOnline) {
+      try {
+        return competitionsService.onSnapshot(callback);
+      } catch (error) {
+        console.error('Error setting up competitions listener:', error);
+        return () => {}; // Return empty unsubscribe function
+      }
+    }
+    return () => {}; // Return empty unsubscribe function
+  },
+
+  onGalleryChange(callback) {
+    if (useFirebase && isOnline) {
+      try {
+        return galleryService.onSnapshot(callback);
+      } catch (error) {
+        console.error('Error setting up gallery listener:', error);
+        return () => {}; // Return empty unsubscribe function
+      }
+    }
+    return () => {}; // Return empty unsubscribe function
+  },
+
+  onAnnouncementsChange(callback) {
+    if (useFirebase && isOnline) {
+      try {
+        return announcementsService.onSnapshot(callback);
+      } catch (error) {
+        console.error('Error setting up announcements listener:', error);
+        return () => {}; // Return empty unsubscribe function
+      }
+    }
+    return () => {}; // Return empty unsubscribe function
   },
 
   // Test cross-device sync by adding a test competition
