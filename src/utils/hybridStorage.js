@@ -427,4 +427,79 @@ export const updateStudentRecords = async () => {
   return updatedStudents;
 };
 
+// Function to reset student data to original names
+export const resetStudentDataToOriginal = async () => {
+  const originalTeamAStudents = [
+    'ADIL MINHAJ', 'ASHIQUE', 'UNAIS', 'AFEEF', 'SAHAD', 'HASHIM', 'MUSTHAFA', 
+    'SINAN', 'HADI', 'MUHAMMED JUBAIR', 'MUBARAK', 'SHAHEEM M', 'SANAD MUHAMMED', 
+    'SHAMIL', 'SABITH', 'RAFHAN', 'UMER', 'ANAS', 'ANAS MUZAMMIL', 
+    'NAHYAN', 'ADNAN'
+  ];
+  
+  const originalTeamBStudents = [
+    'HATHIB', 'JINSHID', 'MIDLAJ', 'IBRAHIM', 'ADHIL KP', 'SHAFI', 'SALMAN', 
+    'NIHAL', 'RUFAID', 'AZHIM', 'ABSHIR', 'HALEEM', 'FAYIZ', 'BASITH', 
+    'KHALEEL', 'ANSHID', 'MUBASHIR', 'ADHIL CP', 'ABDUL HADI', 'HASBIN', 
+    'YASEEN', 'SHAHEEM K'
+  ];
+
+  try {
+    // Get current students to preserve their IDs and participation data
+    const currentStudents = await hybridStorage.getStudents();
+    
+    // Clear all current students
+    for (const student of currentStudents) {
+      await hybridStorage.deleteStudent(student.id);
+    }
+    
+    const allStudents = [];
+    let codeCounter = 1;
+    
+    // Add Team A students
+    originalTeamAStudents.forEach((name) => {
+      allStudents.push({
+        id: codeCounter,
+        name: name,
+        code: `RV2025${String(codeCounter).padStart(3, '0')}`,
+        team: 'Team A',
+        year: '1st',
+        events: [],
+        results: [],
+        points: 0,
+        competitionsRegistered: 0,
+        competitionsCompleted: 0
+      });
+      codeCounter++;
+    });
+    
+    // Add Team B students
+    originalTeamBStudents.forEach((name) => {
+      allStudents.push({
+        id: codeCounter,
+        name: name,
+        code: `RV2025${String(codeCounter).padStart(3, '0')}`,
+        team: 'Team B',
+        year: '1st',
+        events: [],
+        results: [],
+        points: 0,
+        competitionsRegistered: 0,
+        competitionsCompleted: 0
+      });
+      codeCounter++;
+    });
+    
+    // Add all students to Firebase
+    for (const student of allStudents) {
+      await hybridStorage.addStudent(student);
+    }
+    
+    console.log('Student data reset to original names successfully');
+    return allStudents;
+  } catch (error) {
+    console.error('Error resetting student data:', error);
+    throw error;
+  }
+};
+
 export default hybridStorage;

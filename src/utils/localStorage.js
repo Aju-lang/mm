@@ -37,9 +37,9 @@ export const initializeData = () => {
   if (!localStorage.getItem(STORAGE_KEYS.STUDENTS)) {
     const teamAStudents = [
       'ADIL MINHAJ', 'ASHIQUE', 'UNAIS', 'AFEEF', 'SAHAD', 'HASHIM', 'MUSTHAFA', 
-      'SINAN', 'HADI MUHAMMED', 'JUBAIR', 'MUBARAK', 'SHAHEEM M', 'SANAD', 
-      'MUHAMMED', 'SHAMIL', 'SABITH', 'RAFHAN', 'UMER', 'ANAS', 'ANAS', 
-      'MUZAMMIL', 'NAHYAN', 'ADNAN'
+      'SINAN', 'HADI', 'MUHAMMED JUBAIR', 'MUBARAK', 'SHAHEEM M', 'SANAD MUHAMMED', 
+      'SHAMIL', 'SABITH', 'RAFHAN', 'UMER', 'ANAS', 'ANAS MUZAMMIL', 
+      'NAHYAN', 'ADNAN'
     ];
     
     const teamBStudents = [

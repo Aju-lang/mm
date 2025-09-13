@@ -27,11 +27,23 @@ const EnhancedCompetitionManager = () => {
     
     // Set up real-time listeners for multi-device sync
     const unsubscribeCompetitions = hybridStorage.onCompetitionsChange((competitionsData) => {
-      setCompetitions(competitionsData);
+      setCompetitions(prev => {
+        // Only update if data actually changed to prevent unnecessary re-renders
+        if (JSON.stringify(prev) !== JSON.stringify(competitionsData)) {
+          return competitionsData;
+        }
+        return prev;
+      });
     });
     
     const unsubscribeStudents = hybridStorage.onStudentsChange((studentsData) => {
-      setStudents(studentsData);
+      setStudents(prev => {
+        // Only update if data actually changed to prevent unnecessary re-renders
+        if (JSON.stringify(prev) !== JSON.stringify(studentsData)) {
+          return studentsData;
+        }
+        return prev;
+      });
     });
     
     return () => {
@@ -273,10 +285,12 @@ const EnhancedCompetitionManager = () => {
                   className="input"
                   value={newCompetition.name}
                   onChange={(e) => {
+                    e.persist();
                     const value = e.target.value;
                     setNewCompetition(prev => ({...prev, name: value}));
                   }}
                   placeholder="e.g., Coding Challenge"
+                  autoComplete="off"
                 />
               </div>
               
@@ -303,8 +317,13 @@ const EnhancedCompetitionManager = () => {
                 className="input"
                 rows={2}
                 value={newCompetition.description}
-                onChange={(e) => setNewCompetition(prev => ({...prev, description: e.target.value}))}
+                onChange={(e) => {
+                  e.persist();
+                  const value = e.target.value;
+                  setNewCompetition(prev => ({...prev, description: value}));
+                }}
                 placeholder="Brief description of the competition"
+                autoComplete="off"
               />
             </div>
             
@@ -316,7 +335,11 @@ const EnhancedCompetitionManager = () => {
                   required
                   className="input"
                   value={newCompetition.date}
-                  onChange={(e) => setNewCompetition(prev => ({...prev, date: e.target.value}))}
+                  onChange={(e) => {
+                    e.persist();
+                    const value = e.target.value;
+                    setNewCompetition(prev => ({...prev, date: value}));
+                  }}
                 />
               </div>
               
@@ -327,7 +350,11 @@ const EnhancedCompetitionManager = () => {
                   required
                   className="input"
                   value={newCompetition.time}
-                  onChange={(e) => setNewCompetition(prev => ({...prev, time: e.target.value}))}
+                  onChange={(e) => {
+                    e.persist();
+                    const value = e.target.value;
+                    setNewCompetition(prev => ({...prev, time: value}));
+                  }}
                 />
               </div>
               
@@ -338,8 +365,13 @@ const EnhancedCompetitionManager = () => {
                   required
                   className="input"
                   value={newCompetition.venue}
-                  onChange={(e) => setNewCompetition(prev => ({...prev, venue: e.target.value}))}
+                  onChange={(e) => {
+                    e.persist();
+                    const value = e.target.value;
+                    setNewCompetition(prev => ({...prev, venue: value}));
+                  }}
                   placeholder="e.g., Computer Lab 1"
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -426,8 +458,13 @@ const EnhancedCompetitionManager = () => {
                     className="input"
                     rows={6}
                     value={newCompetition.participantNames}
-                    onChange={(e) => setNewCompetition(prev => ({...prev, participantNames: e.target.value}))}
+                    onChange={(e) => {
+                      e.persist();
+                      const value = e.target.value;
+                      setNewCompetition(prev => ({...prev, participantNames: value}));
+                    }}
                     placeholder="Enter participant names, one per line:&#10;John Doe&#10;Jane Smith&#10;Bob Johnson"
+                    autoComplete="off"
                   />
                   <p className="text-xs text-gray-500 mt-1">Enter each participant's name on a new line</p>
                 </div>

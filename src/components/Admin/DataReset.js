@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { hybridStorage } from '../../utils/hybridStorage';
+import { hybridStorage, resetStudentDataToOriginal } from '../../utils/hybridStorage';
 
 const DataReset = ({ onReset }) => {
   const [isResetting, setIsResetting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isResettingStudentNames, setIsResettingStudentNames] = useState(false);
 
   const handleReset = async () => {
     if (!showConfirmation) {
@@ -130,6 +131,27 @@ const DataReset = ({ onReset }) => {
     setShowConfirmation(false);
   };
 
+  const handleResetStudentNames = async () => {
+    if (!window.confirm('Are you sure you want to reset all student names to the original list? This will clear all current student data and recreate students with original names.')) {
+      return;
+    }
+
+    setIsResettingStudentNames(true);
+    try {
+      await resetStudentDataToOriginal();
+      alert('✅ Student names reset to original list successfully!');
+      
+      if (onReset) {
+        onReset();
+      }
+    } catch (error) {
+      console.error('Error resetting student names:', error);
+      alert('❌ Error resetting student names. Please try again.');
+    } finally {
+      setIsResettingStudentNames(false);
+    }
+  };
+
   return (
     <div className="card bg-red-50 border-red-200">
       <div className="flex items-start space-x-4">
@@ -196,6 +218,31 @@ const DataReset = ({ onReset }) => {
               </div>
             </div>
           )}
+        </div>
+      </div>
+      
+      {/* Separate section for student names reset */}
+      <div className="mt-6 pt-6 border-t border-red-200">
+        <div className="flex items-start space-x-4">
+          <div className="p-2 bg-blue-100 rounded-full">
+            <span className="text-blue-600 text-xl">👥</span>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">
+              Reset Student Names
+            </h3>
+            <p className="text-sm text-blue-700 mb-4">
+              Reset all student names back to the original list. This will recreate all students with correct names.
+            </p>
+            
+            <button
+              onClick={handleResetStudentNames}
+              disabled={isResettingStudentNames || isResetting}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isResettingStudentNames ? 'Resetting Student Names...' : 'Reset Student Names'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
