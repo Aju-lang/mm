@@ -91,6 +91,11 @@ export const firebaseService = {
   // Update document
   async update(collectionName, id, data) {
     try {
+      // Validate ID before attempting update
+      if (!id || typeof id !== 'string' || !id.trim()) {
+        throw new Error(`Invalid document ID: ${id}`);
+      }
+      
       const docRef = doc(db, collectionName, id);
       await updateDoc(docRef, {
         ...data,
@@ -99,6 +104,7 @@ export const firebaseService = {
       return { id, ...data };
     } catch (error) {
       console.error('Error updating document:', error);
+      console.error('Collection:', collectionName, 'ID:', id, 'Data:', data);
       throw error;
     }
   },

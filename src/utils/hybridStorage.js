@@ -65,13 +65,24 @@ const syncLocalToFirebase = async () => {
     } else {
       // Simple sync - update Firebase with localStorage data if different
       for (const localStudent of localStudents) {
-        const firebaseStudent = firebaseStudents.find(s => s.code === localStudent.code);
-        if (!firebaseStudent) {
-          await studentsService.create(localStudent);
-          console.log(`Added missing student: ${localStudent.name}`);
-        } else if (JSON.stringify(localStudent) !== JSON.stringify(firebaseStudent)) {
-          await studentsService.update(firebaseStudent.id, localStudent);
-          console.log(`Updated student: ${localStudent.name}`);
+        try {
+          const firebaseStudent = firebaseStudents.find(s => s.code === localStudent.code);
+          if (!firebaseStudent) {
+            await studentsService.create(localStudent);
+            console.log(`Added missing student: ${localStudent.name}`);
+          } else if (JSON.stringify(localStudent) !== JSON.stringify(firebaseStudent)) {
+            // Ensure we have a valid Firebase document ID
+            const validId = firebaseStudent.id || localStudent.id;
+            if (typeof validId === 'string' && validId.trim()) {
+              await studentsService.update(validId, localStudent);
+              console.log(`Updated student: ${localStudent.name} (ID: ${validId})`);
+            } else {
+              console.error('Invalid student ID for update:', { localStudent, firebaseStudent });
+            }
+          }
+        } catch (studentError) {
+          console.error(`Error syncing student ${localStudent.name}:`, studentError);
+          // Continue with other students instead of failing completely
         }
       }
     }
