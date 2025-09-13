@@ -129,6 +129,7 @@ const AdminDashboard = () => {
 
   const [isInitializingStudents, setIsInitializingStudents] = useState(false);
   const [isClearingCompetitions, setIsClearingCompetitions] = useState(false);
+  const [isRunningDiagnostics, setIsRunningDiagnostics] = useState(false);
 
   useEffect(() => {
     const loadFestivalData = async () => {
@@ -149,12 +150,28 @@ const AdminDashboard = () => {
 
     setIsInitializingStudents(true);
     try {
+      console.log('Starting student initialization from Admin Dashboard...');
       await forceInitializeStudents();
       await loadDashboardData(); // Refresh the dashboard
-      alert('✅ Students successfully initialized in Firebase!');
+      alert('✅ Students successfully initialized in Firebase!\n\nCheck the browser console for detailed logs.');
     } catch (error) {
       console.error('Error initializing students:', error);
-      alert('❌ Error initializing students. Check console for details.');
+      
+      let errorMessage = '❌ Error initializing students:\n\n';
+      
+      if (error.message.includes('Firebase connection not available')) {
+        errorMessage += '🔥 Firebase Connection Issue:\n- Check your internet connection\n- Verify Firebase configuration\n- Make sure Firebase project is active';
+      } else if (error.message.includes('No students found in localStorage')) {
+        errorMessage += '👥 No Student Data Found:\n- Student data might not be initialized\n- Try refreshing the page\n- Check if localStorage has student data';
+      } else if (error.code === 'permission-denied') {
+        errorMessage += '🔒 Permission Denied:\n- Check Firebase security rules\n- Verify authentication status\n- Contact developer for rule updates';
+      } else if (error.code === 'unavailable') {
+        errorMessage += '📡 Firebase Service Unavailable:\n- Check internet connection\n- Firebase servers might be down\n- Try again in a few minutes';
+      } else {
+        errorMessage += `🐛 Technical Error:\n${error.message}\n\nCheck browser console for full details.`;
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsInitializingStudents(false);
     }
@@ -175,6 +192,51 @@ const AdminDashboard = () => {
       alert('❌ Error clearing competitions. Check console for details.');
     } finally {
       setIsClearingCompetitions(false);
+    }
+  };
+
+  const handleRunDiagnostics = async () => {
+    setIsRunningDiagnostics(true);
+    try {
+      console.log('🔍 Running Firebase diagnostics...');
+      
+      // Check Firebase connection
+      const firebaseAvailable = await hybridStorage.initialize();
+      console.log('Firebase available:', firebaseAvailable);
+      
+      // Check localStorage students
+      const localStudents = await hybridStorage.getStudents();
+      console.log('LocalStorage students:', localStudents.length);
+      
+      // Check Firebase students
+      const firebaseStudents = await hybridStorage.getStudents();
+      console.log('Firebase students:', firebaseStudents.length);
+      
+      // Check competitions
+      const competitions = await hybridStorage.getCompetitions();
+      console.log('Competitions:', competitions.length);
+      
+      const diagnosticReport = `🔍 Diagnostic Report:
+      
+📊 Data Status:
+• LocalStorage Students: ${localStudents.length}
+• Firebase Students: ${firebaseStudents.length}
+• Competitions: ${competitions.length}
+• Firebase Connection: ${firebaseAvailable ? '✅ Connected' : '❌ Not Connected'}
+
+📝 Recommendations:
+${localStudents.length === 0 ? '⚠️ No students in localStorage - data might not be initialized\n' : ''}
+${firebaseStudents.length === 0 && localStudents.length > 0 ? '⚠️ Students in localStorage but not in Firebase - run initialization\n' : ''}
+${competitions.length > 0 ? '⚠️ Competitions present - use clear function if unwanted\n' : ''}
+
+Check browser console for detailed logs.`;
+      
+      alert(diagnosticReport);
+    } catch (error) {
+      console.error('Diagnostic error:', error);
+      alert(`❌ Diagnostic Error:\n${error.message}\n\nCheck console for details.`);
+    } finally {
+      setIsRunningDiagnostics(false);
     }
   };
 
@@ -351,8 +413,35 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Firebase Student Initialization */}
+          {/* Diagnostics */}
           <div className="mt-8">
+            <div className="card bg-green-50 border-green-200">
+              <div className="flex items-start space-x-4">
+                <div className="p-2 bg-green-100 rounded-full">
+                  <span className="text-green-600 text-xl">🔍</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-green-900 mb-2">
+                    Run System Diagnostics
+                  </h3>
+                  <p className="text-sm text-green-700 mb-4">
+                    Check Firebase connection, student data status, and get recommendations. Run this first if you're experiencing issues.
+                  </p>
+                  
+                  <button
+                    onClick={handleRunDiagnostics}
+                    disabled={isRunningDiagnostics}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isRunningDiagnostics ? 'Running Diagnostics...' : 'Run Diagnostics'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Firebase Student Initialization */}
+          <div className="mt-6">
             <div className="card bg-blue-50 border-blue-200">
               <div className="flex items-start space-x-4">
                 <div className="p-2 bg-blue-100 rounded-full">
@@ -366,13 +455,15 @@ const AdminDashboard = () => {
                     If students are not showing in the admin interface, click this button to force initialize all students in Firebase from localStorage data.
                   </p>
                   
-                  <button
-                    onClick={handleForceInitializeStudents}
-                    disabled={isInitializingStudents}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isInitializingStudents ? 'Initializing Students...' : 'Initialize Students in Firebase'}
-                  </button>
+                  <div className="space-x-3">
+                    <button
+                      onClick={handleForceInitializeStudents}
+                      disabled={isInitializingStudents || isRunningDiagnostics}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isInitializingStudents ? 'Initializing Students...' : 'Initialize Students in Firebase'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

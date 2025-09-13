@@ -540,29 +540,62 @@ export const forceInitializeStudents = async () => {
   try {
     console.log('Force initializing students...');
     
+    // Check if Firebase is available
+    const firebaseAvailable = await checkFirebaseConnection();
+    if (!firebaseAvailable) {
+      throw new Error('Firebase connection not available. Please check your Firebase configuration.');
+    }
+    
+    console.log('Firebase connection confirmed');
+    
     // Clear existing Firebase data
+    console.log('Clearing existing students from Firebase...');
     const existingStudents = await studentsService.getAll();
+    console.log(`Found ${existingStudents.length} existing students in Firebase`);
+    
     for (const student of existingStudents) {
       await studentsService.delete(student.id);
+      console.log(`Deleted: ${student.name || student.id}`);
     }
     
     // Initialize localStorage data
+    console.log('Initializing localStorage data...');
     localStorageUtils.initializeData();
     
     // Get fresh data from localStorage
     const localStudents = localStorageUtils.getStudents();
-    console.log(`Adding ${localStudents.length} students to Firebase`);
+    console.log(`Found ${localStudents.length} students in localStorage`);
+    
+    if (localStudents.length === 0) {
+      throw new Error('No students found in localStorage. Please check if student data is properly initialized.');
+    }
     
     // Add all students to Firebase
-    for (const student of localStudents) {
-      await studentsService.create(student);
-      console.log(`Added: ${student.name} (${student.code})`);
+    console.log('Adding students to Firebase...');
+    for (let i = 0; i < localStudents.length; i++) {
+      const student = localStudents[i];
+      try {
+        await studentsService.create(student);
+        console.log(`Added (${i + 1}/${localStudents.length}): ${student.name} (${student.code})`);
+      } catch (studentError) {
+        console.error(`Failed to add student ${student.name}:`, studentError);
+        // Continue with other students
+      }
     }
+    
+    // Verify the students were added
+    const finalStudents = await studentsService.getAll();
+    console.log(`Verification: ${finalStudents.length} students now in Firebase`);
     
     console.log('Force initialization complete!');
     return localStudents;
   } catch (error) {
     console.error('Error force initializing students:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
     throw error;
   }
 };
