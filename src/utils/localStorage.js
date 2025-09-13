@@ -25,8 +25,8 @@ export const initializeData = () => {
     const festivalData = {
       name: 'RENDEZVOUS 2025',
       logo: '🎭',
-      startDate: '2025-03-15',
-      endDate: '2025-03-17',
+      startDate: '2025-09-19',
+      endDate: '2025-09-20',
       venue: 'MARKAZ MIHRAJ MALAYIL',
       description: 'Annual Cultural and Technical Festival'
     };
@@ -93,7 +93,7 @@ export const initializeData = () => {
         name: 'Coding Challenge',
         description: 'Competitive programming contest',
         category: 'Technical',
-        date: '2025-03-15',
+        date: '2025-09-19',
         time: '10:00 AM',
         venue: 'Computer Lab 1',
         maxParticipants: 50,
@@ -106,7 +106,7 @@ export const initializeData = () => {
         name: 'Web Design Contest',
         description: 'Create stunning web interfaces',
         category: 'Technical',
-        date: '2025-03-15',
+        date: '2025-09-19',
         time: '02:00 PM',
         venue: 'Computer Lab 2',
         maxParticipants: 30,
@@ -119,7 +119,7 @@ export const initializeData = () => {
         name: 'Dance Battle',
         description: 'Showcase your dance moves',
         category: 'Cultural',
-        date: '2025-03-16',
+        date: '2025-09-20',
         time: '06:00 PM',
         venue: 'Main Auditorium',
         maxParticipants: 100,
@@ -132,7 +132,7 @@ export const initializeData = () => {
         name: 'Quiz Championship',
         description: 'Test your general knowledge',
         category: 'Academic',
-        date: '2025-03-16',
+        date: '2025-09-20',
         time: '11:00 AM',
         venue: 'Seminar Hall',
         maxParticipants: 60,
@@ -145,7 +145,7 @@ export const initializeData = () => {
         name: 'Photography Contest',
         description: 'Capture the perfect moment',
         category: 'Creative',
-        date: '2025-03-17',
+        date: '2025-09-20',
         time: '09:00 AM',
         venue: 'Campus Grounds',
         maxParticipants: 40,
@@ -476,4 +476,61 @@ export const getTeamLeaderboard = () => {
       avgPoints: team.studentCount > 0 ? Math.round(team.totalPoints / team.studentCount) : 0
     }))
     .sort((a, b) => b.totalPoints - a.totalPoints);
+};
+
+// Automatic student record updates
+export const updateStudentRecords = () => {
+  const students = getStudents();
+  const competitions = getCompetitions();
+  
+  const updatedStudents = students.map(student => {
+    // Find competitions this student is registered for
+    const registeredCompetitions = competitions.filter(comp => 
+      comp.participants && comp.participants.some(p => p.id === student.id)
+    );
+    
+    // Find completed competitions
+    const completedCompetitions = registeredCompetitions.filter(comp => comp.status === 'completed');
+    
+    // Calculate total points from all competitions
+    let totalPoints = 0;
+    const results = [];
+    
+    registeredCompetitions.forEach(comp => {
+      const participation = comp.participants.find(p => p.id === student.id);
+      if (participation) {
+        // Add points from prizes
+        if (participation.prize === '1') totalPoints += 10;
+        else if (participation.prize === '2') totalPoints += 7;
+        else if (participation.prize === '3') totalPoints += 5;
+        else if (participation.reported) totalPoints += 2; // Participation points
+        
+        // Add custom points
+        if (participation.customPoints) totalPoints += participation.customPoints;
+        
+        // Add to results
+        if (participation.prize || participation.reported) {
+          results.push({
+            competitionId: comp.id,
+            competitionName: comp.name,
+            prize: participation.prize,
+            points: participation.customPoints || 0,
+            reported: participation.reported
+          });
+        }
+      }
+    });
+    
+    return {
+      ...student,
+      events: registeredCompetitions.map(comp => comp.name),
+      results: results,
+      points: totalPoints,
+      competitionsRegistered: registeredCompetitions.length,
+      competitionsCompleted: completedCompetitions.length
+    };
+  });
+  
+  setStudents(updatedStudents);
+  return updatedStudents;
 };

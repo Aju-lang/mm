@@ -116,7 +116,6 @@ const GalleryManager = () => {
                 accept="image/*"
                 onChange={handleFileSelect}
                 className="input"
-                required
               />
               {previewUrl && (
                 <div className="mt-4">
@@ -136,7 +135,7 @@ const GalleryManager = () => {
                 required
                 className="input"
                 value={uploadData.title}
-                onChange={(e) => setUploadData({...uploadData, title: e.target.value})}
+                onChange={(e) => setUploadData(prev => ({...prev, title: e.target.value}))}
                 placeholder="e.g., Opening Ceremony"
               />
             </div>
@@ -146,7 +145,7 @@ const GalleryManager = () => {
               <select
                 className="input"
                 value={uploadData.category}
-                onChange={(e) => setUploadData({...uploadData, category: e.target.value})}
+                onChange={(e) => setUploadData(prev => ({...prev, category: e.target.value}))}
               >
                 {categories.map(cat => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -160,7 +159,7 @@ const GalleryManager = () => {
                 className="input"
                 rows={3}
                 value={uploadData.description}
-                onChange={(e) => setUploadData({...uploadData, description: e.target.value})}
+                onChange={(e) => setUploadData(prev => ({...prev, description: e.target.value}))}
                 placeholder="Brief description of the image"
               />
             </div>

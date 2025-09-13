@@ -5,7 +5,8 @@ import {
   addCompetition,
   deleteCompetition,
   getFestivalData,
-  getStudents
+  getStudents,
+  updateStudentRecords
 } from '../../utils/localStorage';
 
 const EnhancedCompetitionManager = () => {
@@ -35,6 +36,8 @@ const EnhancedCompetitionManager = () => {
   const loadData = () => {
     setCompetitions(getCompetitions());
     setStudents(getStudents());
+    // Update student records automatically
+    updateStudentRecords();
   };
 
   const handleAddCompetition = (e) => {
@@ -138,24 +141,25 @@ const EnhancedCompetitionManager = () => {
     setSelectedStudents([]);
   };
 
-  // Generate random code letters for participants (orderly random assignment)
+  // Generate code letters for participants (alphabetical order to random names)
   const generateCodeLetters = (competitionId) => {
     const competition = competitions.find(c => c.id === competitionId);
     if (!competition) return;
 
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const availableLetters = [...alphabet];
     
-    // Shuffle the available letters randomly
-    for (let i = availableLetters.length - 1; i > 0; i--) {
+    // Shuffle the participants array to randomize assignment
+    const shuffledParticipants = [...competition.participants];
+    for (let i = shuffledParticipants.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [availableLetters[i], availableLetters[j]] = [availableLetters[j], availableLetters[i]];
+      [shuffledParticipants[i], shuffledParticipants[j]] = [shuffledParticipants[j], shuffledParticipants[i]];
     }
     
-    const updatedParticipants = competition.participants.map((participant, index) => {
-      // Assign letters orderly from the shuffled array
-      const code = availableLetters[index % availableLetters.length];
-      return { ...participant, code, reported: false };
+    // Assign letters in alphabetical order to the shuffled participants
+    const updatedParticipants = competition.participants.map((participant) => {
+      const shuffledIndex = shuffledParticipants.findIndex(p => p.id === participant.id);
+      const code = alphabet[shuffledIndex % alphabet.length];
+      return { ...participant, code };
     });
 
     updateCompetitionData(competitionId, { participants: updatedParticipants });
@@ -270,7 +274,7 @@ const EnhancedCompetitionManager = () => {
                 <select
                   className="input"
                   value={newCompetition.category}
-                  onChange={(e) => setNewCompetition({...newCompetition, category: e.target.value})}
+                  onChange={(e) => setNewCompetition(prev => ({...prev, category: e.target.value}))}
                 >
                   <option value="Technical">Technical</option>
                   <option value="Cultural">Cultural</option>
@@ -288,7 +292,7 @@ const EnhancedCompetitionManager = () => {
                 className="input"
                 rows={2}
                 value={newCompetition.description}
-                onChange={(e) => setNewCompetition({...newCompetition, description: e.target.value})}
+                onChange={(e) => setNewCompetition(prev => ({...prev, description: e.target.value}))}
                 placeholder="Brief description of the competition"
               />
             </div>
@@ -301,7 +305,7 @@ const EnhancedCompetitionManager = () => {
                   required
                   className="input"
                   value={newCompetition.date}
-                  onChange={(e) => setNewCompetition({...newCompetition, date: e.target.value})}
+                  onChange={(e) => setNewCompetition(prev => ({...prev, date: e.target.value}))}
                 />
               </div>
               
@@ -312,7 +316,7 @@ const EnhancedCompetitionManager = () => {
                   required
                   className="input"
                   value={newCompetition.time}
-                  onChange={(e) => setNewCompetition({...newCompetition, time: e.target.value})}
+                  onChange={(e) => setNewCompetition(prev => ({...prev, time: e.target.value}))}
                 />
               </div>
               
@@ -323,7 +327,7 @@ const EnhancedCompetitionManager = () => {
                   required
                   className="input"
                   value={newCompetition.venue}
-                  onChange={(e) => setNewCompetition({...newCompetition, venue: e.target.value})}
+                  onChange={(e) => setNewCompetition(prev => ({...prev, venue: e.target.value}))}
                   placeholder="e.g., Computer Lab 1"
                 />
               </div>
@@ -411,7 +415,7 @@ const EnhancedCompetitionManager = () => {
                     className="input"
                     rows={6}
                     value={newCompetition.participantNames}
-                    onChange={(e) => setNewCompetition({...newCompetition, participantNames: e.target.value})}
+                    onChange={(e) => setNewCompetition(prev => ({...prev, participantNames: e.target.value}))}
                     placeholder="Enter participant names, one per line:&#10;John Doe&#10;Jane Smith&#10;Bob Johnson"
                   />
                   <p className="text-xs text-gray-500 mt-1">Enter each participant's name on a new line</p>
@@ -643,6 +647,34 @@ const EnhancedCompetitionManager = () => {
               </div>
             )}
             
+            {/* Competition Completion */}
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h4 className="text-lg font-semibold text-green-800 mb-2">🏁 Competition Status</h4>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-700">
+                    Status: <span className="font-medium">{competition.status === 'completed' ? 'Completed' : 'Ongoing'}</span>
+                  </p>
+                  {competition.status === 'completed' && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Competition completed and results are ready for publishing
+                    </p>
+                  )}
+                </div>
+                {competition.status !== 'completed' && (
+                  <button
+                    onClick={() => {
+                      updateCompetitionData(competition.id, { status: 'completed' });
+                      loadData();
+                    }}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    ✅ Mark as Completed
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="flex justify-end space-x-3">
               <button onClick={onClose} className="btn-outline">
                 Close
