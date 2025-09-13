@@ -6,6 +6,7 @@ const EnhancedCompetitionManager = () => {
   const [competitions, setCompetitions] = useState([]);
   const [students, setStudents] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [selectedCompetition, setSelectedCompetition] = useState(null);
   const [showReportingModal, setShowReportingModal] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -25,32 +26,60 @@ const EnhancedCompetitionManager = () => {
   useEffect(() => {
     loadData();
     
-    // Set up real-time listeners for multi-device sync
+    // Don't set up listeners if form is open to prevent focus issues
+    if (showAddForm) {
+      return;
+    }
+    
+    // Set up real-time listeners for multi-device sync with debouncing
+    let competitionUpdateTimeout;
+    let studentUpdateTimeout;
+    
     const unsubscribeCompetitions = hybridStorage.onCompetitionsChange((competitionsData) => {
-      setCompetitions(prev => {
-        // Only update if data actually changed to prevent unnecessary re-renders
-        if (JSON.stringify(prev) !== JSON.stringify(competitionsData)) {
-          return competitionsData;
-        }
-        return prev;
-      });
+      // Skip updates if user is typing to prevent focus loss
+      if (isTyping || showAddForm) {
+        return;
+      }
+      
+      // Debounce updates to prevent rapid re-renders during typing
+      clearTimeout(competitionUpdateTimeout);
+      competitionUpdateTimeout = setTimeout(() => {
+        setCompetitions(prev => {
+          // Only update if data actually changed to prevent unnecessary re-renders
+          if (JSON.stringify(prev) !== JSON.stringify(competitionsData)) {
+            return competitionsData;
+          }
+          return prev;
+        });
+      }, 300); // Increased debounce to 300ms
     });
     
     const unsubscribeStudents = hybridStorage.onStudentsChange((studentsData) => {
-      setStudents(prev => {
-        // Only update if data actually changed to prevent unnecessary re-renders
-        if (JSON.stringify(prev) !== JSON.stringify(studentsData)) {
-          return studentsData;
-        }
-        return prev;
-      });
+      // Skip updates if form is open
+      if (showAddForm) {
+        return;
+      }
+      
+      // Debounce updates to prevent rapid re-renders during typing
+      clearTimeout(studentUpdateTimeout);
+      studentUpdateTimeout = setTimeout(() => {
+        setStudents(prev => {
+          // Only update if data actually changed to prevent unnecessary re-renders
+          if (JSON.stringify(prev) !== JSON.stringify(studentsData)) {
+            return studentsData;
+          }
+          return prev;
+        });
+      }, 300); // Increased debounce to 300ms
     });
     
     return () => {
+      clearTimeout(competitionUpdateTimeout);
+      clearTimeout(studentUpdateTimeout);
       unsubscribeCompetitions();
       unsubscribeStudents();
     };
-  }, []);
+  }, [showAddForm, isTyping]);
 
   const loadData = async () => {
     try {
@@ -285,12 +314,26 @@ const EnhancedCompetitionManager = () => {
                   className="input"
                   value={newCompetition.name}
                   onChange={(e) => {
-                    e.persist();
+                    e.preventDefault();
+                    e.stopPropagation();
                     const value = e.target.value;
                     setNewCompetition(prev => ({...prev, name: value}));
                   }}
+                  onFocus={(e) => {
+                    setIsTyping(true);
+                    e.target.style.outline = '2px solid #3B82F6';
+                  }}
+                  onBlur={(e) => {
+                    setIsTyping(false);
+                    e.target.style.outline = '';
+                  }}
+                  onKeyDown={() => setIsTyping(true)}
+                  onKeyUp={() => {
+                    setTimeout(() => setIsTyping(false), 500);
+                  }}
                   placeholder="e.g., Coding Challenge"
                   autoComplete="off"
+                  spellCheck="false"
                 />
               </div>
               
