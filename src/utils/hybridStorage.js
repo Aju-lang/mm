@@ -47,7 +47,7 @@ const syncLocalToFirebase = async () => {
     console.log('Syncing local data to Firebase...');
     
     // Ensure localStorage has data first
-    localStorageUtils.initialize();
+    localStorageUtils.initializeData();
     
     // Sync students
     const localStudents = localStorageUtils.getStudents();
@@ -540,7 +540,7 @@ export const forceInitializeStudents = async () => {
     }
     
     // Initialize localStorage data
-    localStorageUtils.initialize();
+    localStorageUtils.initializeData();
     
     // Get fresh data from localStorage
     const localStudents = localStorageUtils.getStudents();
