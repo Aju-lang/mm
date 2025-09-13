@@ -461,8 +461,6 @@ const EnhancedCompetitionManager = () => {
   );
 
   const ReportingModal = ({ competition, onClose }) => {
-    if (!competition) return null;
-
     const [festivalData, setFestivalData] = useState({
       name: 'RENDEZVOUS 2025',
       logo: '🎭',
@@ -476,6 +474,8 @@ const EnhancedCompetitionManager = () => {
       };
       loadFestivalData();
     }, []);
+
+    if (!competition) return null;
     const winners = competition.participants?.filter(p => p.prize && ['1', '2', '3'].includes(p.prize)) || [];
     
     // Debug log to check participants
