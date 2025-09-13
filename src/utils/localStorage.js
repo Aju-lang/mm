@@ -246,9 +246,9 @@ export const addCompetition = (competition) => {
   const newCompetition = {
     ...competition,
     id: Date.now(),
-    participants: [],
-    results: [],
-    status: 'upcoming'
+    participants: competition.participants || [],
+    results: competition.results || [],
+    status: competition.status || 'upcoming'
   };
   competitions.push(newCompetition);
   setCompetitions(competitions);
