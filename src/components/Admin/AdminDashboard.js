@@ -130,6 +130,8 @@ const AdminDashboard = () => {
   const [isInitializingStudents, setIsInitializingStudents] = useState(false);
   const [isClearingCompetitions, setIsClearingCompetitions] = useState(false);
   const [isRunningDiagnostics, setIsRunningDiagnostics] = useState(false);
+  const [isTestingRealTime, setIsTestingRealTime] = useState(false);
+  const [realTimeStatus, setRealTimeStatus] = useState('Not tested');
 
   useEffect(() => {
     const loadFestivalData = async () => {
@@ -237,6 +239,111 @@ Check browser console for detailed logs.`;
       alert(`❌ Diagnostic Error:\n${error.message}\n\nCheck console for details.`);
     } finally {
       setIsRunningDiagnostics(false);
+    }
+  };
+
+  const handleTestRealTimeUpdates = async () => {
+    setIsTestingRealTime(true);
+    setRealTimeStatus('Testing...');
+    
+    try {
+      console.log('🧪 Starting Firebase real-time update test...');
+      
+      // Test 1: Check Firebase connection
+      setRealTimeStatus('Checking Firebase connection...');
+      const firebaseAvailable = await hybridStorage.initialize();
+      if (!firebaseAvailable) {
+        throw new Error('Firebase not available');
+      }
+      
+      // Test 2: Set up real-time listener
+      setRealTimeStatus('Setting up real-time listener...');
+      let listenerTriggered = false;
+      let receivedData = null;
+      
+      const unsubscribe = hybridStorage.onCompetitionsChange((data) => {
+        console.log('🔄 Real-time listener triggered with data:', data.length, 'competitions');
+        listenerTriggered = true;
+        receivedData = data;
+      });
+      
+      // Test 3: Add a test competition
+      setRealTimeStatus('Adding test competition...');
+      const testCompetition = {
+        name: `Real-Time Test ${Date.now()}`,
+        description: 'Testing Firebase real-time updates',
+        category: 'Technical',
+        date: '2025-09-19',
+        time: '10:00 AM',
+        venue: 'Test Venue',
+        participants: [],
+        results: [],
+        status: 'upcoming'
+      };
+      
+      await hybridStorage.addCompetition(testCompetition);
+      console.log('✅ Test competition added');
+      
+      // Test 4: Wait for real-time update
+      setRealTimeStatus('Waiting for real-time update...');
+      let waitTime = 0;
+      while (!listenerTriggered && waitTime < 5000) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        waitTime += 100;
+      }
+      
+      // Test 5: Verify results
+      if (listenerTriggered) {
+        setRealTimeStatus('✅ Real-time updates working!');
+        console.log('🎉 Real-time test PASSED');
+        
+        // Clean up test competition
+        const testComp = receivedData.find(c => c.name.includes('Real-Time Test'));
+        if (testComp) {
+          await hybridStorage.deleteCompetition(testComp.id);
+          console.log('🧹 Test competition cleaned up');
+        }
+        
+        alert(`✅ Firebase Real-Time Test Results:
+
+🔄 Real-time listener: WORKING
+⚡ Update speed: ${waitTime}ms
+📊 Data received: ${receivedData.length} competitions
+🔥 Firebase sync: ACTIVE
+
+Your real-time updates are working perfectly!`);
+      } else {
+        setRealTimeStatus('❌ Real-time updates not working');
+        console.log('❌ Real-time test FAILED - listener not triggered');
+        
+        alert(`❌ Firebase Real-Time Test Results:
+
+🔄 Real-time listener: NOT WORKING
+🔥 Firebase connection: ${firebaseAvailable ? 'OK' : 'FAILED'}
+⚠️ Issue: Listener not receiving updates
+
+Possible causes:
+- Firebase security rules blocking reads
+- Network connectivity issues
+- Firebase service temporarily down`);
+      }
+      
+      // Clean up listener
+      unsubscribe();
+      
+    } catch (error) {
+      console.error('Real-time test error:', error);
+      setRealTimeStatus(`❌ Test failed: ${error.message}`);
+      
+      alert(`❌ Real-Time Test Failed:
+
+Error: ${error.message}
+
+Check console for detailed logs.`);
+    } finally {
+      setIsTestingRealTime(false);
+      // Refresh dashboard data
+      await loadDashboardData();
     }
   };
 
@@ -434,6 +541,36 @@ Check browser console for detailed logs.`;
                     className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isRunningDiagnostics ? 'Running Diagnostics...' : 'Run Diagnostics'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Real-Time Updates Test */}
+          <div className="mt-6">
+            <div className="card bg-purple-50 border-purple-200">
+              <div className="flex items-start space-x-4">
+                <div className="p-2 bg-purple-100 rounded-full">
+                  <span className="text-purple-600 text-xl">⚡</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-purple-900 mb-2">
+                    Test Firebase Real-Time Updates
+                  </h3>
+                  <p className="text-sm text-purple-700 mb-2">
+                    Verify that Firebase real-time listeners are working for multi-device synchronization.
+                  </p>
+                  <p className="text-xs text-purple-600 mb-4">
+                    Status: <span className="font-medium">{realTimeStatus}</span>
+                  </p>
+                  
+                  <button
+                    onClick={handleTestRealTimeUpdates}
+                    disabled={isTestingRealTime}
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isTestingRealTime ? 'Testing Real-Time Updates...' : 'Test Real-Time Updates'}
                   </button>
                 </div>
               </div>

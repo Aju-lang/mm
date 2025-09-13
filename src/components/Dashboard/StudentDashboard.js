@@ -31,19 +31,23 @@ const StudentDashboard = ({ currentView }) => {
     loadFestivalData();
     
     // Set up real-time listeners for automatic updates
-    const unsubscribeStudents = hybridStorage.onStudentsChange(() => {
+    const unsubscribeStudents = hybridStorage.onStudentsChange((data) => {
+      console.log('📊 Student Dashboard: Students updated via Firebase real-time', data.length);
       loadStats();
     });
     
-    const unsubscribeCompetitions = hybridStorage.onCompetitionsChange(() => {
+    const unsubscribeCompetitions = hybridStorage.onCompetitionsChange((data) => {
+      console.log('🏆 Student Dashboard: Competitions updated via Firebase real-time', data.length);
       loadStats();
     });
     
-    const unsubscribeAnnouncements = hybridStorage.onAnnouncementsChange(() => {
+    const unsubscribeAnnouncements = hybridStorage.onAnnouncementsChange((data) => {
+      console.log('📢 Student Dashboard: Announcements updated via Firebase real-time', data.length);
       loadStats();
     });
     
-    const unsubscribeGallery = hybridStorage.onGalleryChange(() => {
+    const unsubscribeGallery = hybridStorage.onGalleryChange((data) => {
+      console.log('🖼️ Student Dashboard: Gallery updated via Firebase real-time', data.length);
       loadStats();
     });
     
