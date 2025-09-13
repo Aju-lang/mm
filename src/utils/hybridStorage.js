@@ -46,22 +46,48 @@ const syncLocalToFirebase = async () => {
   try {
     console.log('Syncing local data to Firebase...');
     
+    // Ensure localStorage has data first
+    localStorageUtils.initialize();
+    
     // Sync students
     const localStudents = localStorageUtils.getStudents();
     const firebaseStudents = await studentsService.getAll();
     
-    // Simple sync - update Firebase with localStorage data if different
-    for (const localStudent of localStudents) {
-      const firebaseStudent = firebaseStudents.find(s => s.code === localStudent.code);
-      if (!firebaseStudent) {
+    console.log(`Syncing students - Local: ${localStudents.length}, Firebase: ${firebaseStudents.length}`);
+    
+    // If no students in Firebase, add all from localStorage
+    if (firebaseStudents.length === 0 && localStudents.length > 0) {
+      console.log('No students in Firebase, migrating all from localStorage...');
+      for (const localStudent of localStudents) {
         await studentsService.create(localStudent);
-      } else if (JSON.stringify(localStudent) !== JSON.stringify(firebaseStudent)) {
-        await studentsService.update(firebaseStudent.id, localStudent);
+        console.log(`Added student: ${localStudent.name}`);
+      }
+    } else {
+      // Simple sync - update Firebase with localStorage data if different
+      for (const localStudent of localStudents) {
+        const firebaseStudent = firebaseStudents.find(s => s.code === localStudent.code);
+        if (!firebaseStudent) {
+          await studentsService.create(localStudent);
+          console.log(`Added missing student: ${localStudent.name}`);
+        } else if (JSON.stringify(localStudent) !== JSON.stringify(firebaseStudent)) {
+          await studentsService.update(firebaseStudent.id, localStudent);
+          console.log(`Updated student: ${localStudent.name}`);
+        }
       }
     }
 
-    // Similar sync for other collections...
-    console.log('Sync complete');
+    // Sync competitions
+    const localCompetitions = localStorageUtils.getCompetitions();
+    const firebaseCompetitions = await competitionsService.getAll();
+    
+    if (firebaseCompetitions.length === 0 && localCompetitions.length > 0) {
+      console.log('No competitions in Firebase, migrating from localStorage...');
+      for (const localCompetition of localCompetitions) {
+        await competitionsService.create(localCompetition);
+      }
+    }
+
+    console.log('Firebase sync complete');
   } catch (error) {
     console.error('Error syncing to Firebase:', error);
   }
@@ -498,6 +524,38 @@ export const resetStudentDataToOriginal = async () => {
     return allStudents;
   } catch (error) {
     console.error('Error resetting student data:', error);
+    throw error;
+  }
+};
+
+// Force initialize student data - useful for debugging
+export const forceInitializeStudents = async () => {
+  try {
+    console.log('Force initializing students...');
+    
+    // Clear existing Firebase data
+    const existingStudents = await studentsService.getAll();
+    for (const student of existingStudents) {
+      await studentsService.delete(student.id);
+    }
+    
+    // Initialize localStorage data
+    localStorageUtils.initialize();
+    
+    // Get fresh data from localStorage
+    const localStudents = localStorageUtils.getStudents();
+    console.log(`Adding ${localStudents.length} students to Firebase`);
+    
+    // Add all students to Firebase
+    for (const student of localStudents) {
+      await studentsService.create(student);
+      console.log(`Added: ${student.name} (${student.code})`);
+    }
+    
+    console.log('Force initialization complete!');
+    return localStudents;
+  } catch (error) {
+    console.error('Error force initializing students:', error);
     throw error;
   }
 };

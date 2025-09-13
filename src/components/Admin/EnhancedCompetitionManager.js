@@ -448,7 +448,10 @@ const EnhancedCompetitionManager = () => {
                   </div>
                   
                   {students.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">No students registered yet.</p>
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 mb-2">No students loaded.</p>
+                      <p className="text-sm text-gray-400">Go to Admin Dashboard and click "Initialize Students in Firebase" if this persists.</p>
+                    </div>
                   )}
                 </div>
               ) : (

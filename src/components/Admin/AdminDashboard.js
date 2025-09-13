@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
+import { hybridStorage, updateStudentRecords, forceInitializeStudents } from '../../utils/hybridStorage';
 import DataReset from './DataReset';
 
 const AdminDashboard = () => {
@@ -127,6 +127,8 @@ const AdminDashboard = () => {
     venue: 'MARKAZ MIHRAJ MALAYIL'
   });
 
+  const [isInitializingStudents, setIsInitializingStudents] = useState(false);
+
   useEffect(() => {
     const loadFestivalData = async () => {
       try {
@@ -138,6 +140,24 @@ const AdminDashboard = () => {
     };
     loadFestivalData();
   }, []);
+
+  const handleForceInitializeStudents = async () => {
+    if (!window.confirm('This will clear all students from Firebase and re-add them from localStorage. Are you sure?')) {
+      return;
+    }
+
+    setIsInitializingStudents(true);
+    try {
+      await forceInitializeStudents();
+      await loadDashboardData(); // Refresh the dashboard
+      alert('✅ Students successfully initialized in Firebase!');
+    } catch (error) {
+      console.error('Error initializing students:', error);
+      alert('❌ Error initializing students. Check console for details.');
+    } finally {
+      setIsInitializingStudents(false);
+    }
+  };
 
   const StatCard = ({ title, value, icon, color, description }) => (
     <div className="card hover:shadow-xl transition-shadow duration-300">
@@ -307,6 +327,33 @@ const AdminDashboard = () => {
                     <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1"></span>
                     Broadcasting
                   </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Firebase Student Initialization */}
+          <div className="mt-8">
+            <div className="card bg-blue-50 border-blue-200">
+              <div className="flex items-start space-x-4">
+                <div className="p-2 bg-blue-100 rounded-full">
+                  <span className="text-blue-600 text-xl">🔄</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                    Initialize Students in Firebase
+                  </h3>
+                  <p className="text-sm text-blue-700 mb-4">
+                    If students are not showing in the admin interface, click this button to force initialize all students in Firebase from localStorage data.
+                  </p>
+                  
+                  <button
+                    onClick={handleForceInitializeStudents}
+                    disabled={isInitializingStudents}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isInitializingStudents ? 'Initializing Students...' : 'Initialize Students in Firebase'}
+                  </button>
                 </div>
               </div>
             </div>
