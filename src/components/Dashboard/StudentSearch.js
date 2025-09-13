@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
 
 const StudentSearch = () => {
@@ -36,8 +36,22 @@ const StudentSearch = () => {
     setLoading(false);
   };
 
+  const [competitions, setCompetitions] = useState([]);
+
+  // Load competitions for name lookup
+  useEffect(() => {
+    const loadCompetitions = async () => {
+      try {
+        const comps = await hybridStorage.getCompetitions();
+        setCompetitions(comps);
+      } catch (error) {
+        console.error('Error loading competitions:', error);
+      }
+    };
+    loadCompetitions();
+  }, []);
+
   const getCompetitionName = (competitionId) => {
-    const competitions = getCompetitions();
     const competition = competitions.find(c => c.id === competitionId);
     return competition ? competition.name : 'Unknown Competition';
   };

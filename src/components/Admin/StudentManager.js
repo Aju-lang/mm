@@ -65,11 +65,17 @@ const StudentManager = () => {
     }
   };
 
-  const handleRegisterForEvent = (studentId, competitionId) => {
-    const student = students.find(s => s.id === studentId);
-    if (student) {
-      registerStudentForEvent(student.code, competitionId);
-      loadData();
+  const handleRegisterForEvent = async (studentId, competitionId) => {
+    try {
+      const student = students.find(s => s.id === studentId);
+      if (student) {
+        // This functionality is now handled through the competition manager
+        // where students are selected for competitions
+        console.log('Student registration is handled through Competition Manager');
+        alert('Student registration is now handled through the Competition Manager. Please use the "Add Competition" feature to register students for events.');
+      }
+    } catch (error) {
+      console.error('Error registering student:', error);
     }
   };
 
