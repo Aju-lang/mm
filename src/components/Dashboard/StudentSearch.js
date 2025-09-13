@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getStudentByCode, getCompetitions, updateStudentRecords } from '../../utils/localStorage';
+import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
 
 const StudentSearch = () => {
   const [searchCode, setSearchCode] = useState('');
@@ -19,9 +19,9 @@ const StudentSearch = () => {
     
     try {
       // Update student records first to get latest data
-      updateStudentRecords();
+      await updateStudentRecords();
       
-      const foundStudent = getStudentByCode(searchCode.trim().toUpperCase());
+      const foundStudent = await hybridStorage.getStudentByCode(searchCode.trim().toUpperCase());
       if (foundStudent) {
         setStudent(foundStudent);
         setError('');

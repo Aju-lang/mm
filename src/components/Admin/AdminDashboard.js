@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  getStudents, 
-  getCompetitions, 
-  getAnnouncements,
-  getFestivalData,
-  getGallery,
-  updateStudentRecords
-} from '../../utils/localStorage';
+import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
+import DataReset from './DataReset';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -22,26 +16,52 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     loadDashboardData();
+    
+    // Set up real-time listeners for automatic updates
+    const unsubscribeStudents = hybridStorage.onStudentsChange(() => {
+      loadDashboardData();
+    });
+    
+    const unsubscribeCompetitions = hybridStorage.onCompetitionsChange(() => {
+      loadDashboardData();
+    });
+    
+    const unsubscribeAnnouncements = hybridStorage.onAnnouncementsChange(() => {
+      loadDashboardData();
+    });
+    
+    const unsubscribeGallery = hybridStorage.onGalleryChange(() => {
+      loadDashboardData();
+    });
+    
+    return () => {
+      unsubscribeStudents();
+      unsubscribeCompetitions();
+      unsubscribeAnnouncements();
+      unsubscribeGallery();
+    };
   }, []);
 
-  const loadDashboardData = () => {
-    const students = getStudents();
-    const competitions = getCompetitions();
-    const announcements = getAnnouncements();
+  const loadDashboardData = async () => {
+    try {
+      // Update student records first
+      await updateStudentRecords();
+      
+      const [students, competitions, announcements, gallery] = await Promise.all([
+        hybridStorage.getStudents(),
+        hybridStorage.getCompetitions(),
+        hybridStorage.getAnnouncements(),
+        hybridStorage.getGallery()
+      ]);
 
-    const gallery = getGallery();
-    
-    // Update student records first
-    updateStudentRecords();
-
-    setStats({
-      totalStudents: students.length,
-      totalCompetitions: competitions.length,
-      activeAnnouncements: announcements.filter(a => a.active).length,
-      completedCompetitions: competitions.filter(c => c.status === 'completed').length,
-      totalGalleryImages: gallery.length,
-      studentsWithResults: students.filter(s => s.results && s.results.length > 0).length
-    });
+      setStats({
+        totalStudents: students.length,
+        totalCompetitions: competitions.length,
+        activeAnnouncements: announcements.filter(a => a.active).length,
+        completedCompetitions: competitions.filter(c => c.status === 'completed').length,
+        totalGalleryImages: gallery.length,
+        studentsWithResults: students.filter(s => s.results && s.results.length > 0).length
+      });
 
     // Generate real recent activity based on actual data
     const activities = [];
@@ -96,9 +116,28 @@ const AdminDashboard = () => {
     const allActivities = [...recentCompetitions, ...recentAnnouncements, ...activities].slice(0, 5);
 
     setRecentActivity(allActivities);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    }
   };
 
-  const festivalData = getFestivalData();
+  const [festivalData, setFestivalData] = useState({
+    name: 'RENDEZVOUS 2025',
+    logo: '🎭',
+    venue: 'MARKAZ MIHRAJ MALAYIL'
+  });
+
+  useEffect(() => {
+    const loadFestivalData = async () => {
+      try {
+        const data = await hybridStorage.getFestivalData();
+        setFestivalData(data);
+      } catch (error) {
+        console.error('Error loading festival data:', error);
+      }
+    };
+    loadFestivalData();
+  }, []);
 
   const StatCard = ({ title, value, icon, color, description }) => (
     <div className="card hover:shadow-xl transition-shadow duration-300">
@@ -273,6 +312,10 @@ const AdminDashboard = () => {
             </div>
           </div>
 
+          {/* Data Reset Section */}
+          <div className="mt-8">
+            <DataReset onReset={() => loadDashboardData()} />
+          </div>
         </div>
       </div>
     </div>

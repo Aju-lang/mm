@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  getStudents,
-  addStudent,
-  updateStudent,
-  getCompetitions,
-  registerStudentForEvent,
-  updateStudentRecords
-} from '../../utils/localStorage';
+import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
 
 const StudentManager = () => {
   const [students, setStudents] = useState([]);
@@ -24,25 +17,52 @@ const StudentManager = () => {
 
   useEffect(() => {
     loadData();
+    
+    // Set up real-time listeners for multi-device sync
+    const unsubscribeStudents = hybridStorage.onStudentsChange((studentsData) => {
+      setStudents(studentsData);
+    });
+    
+    const unsubscribeCompetitions = hybridStorage.onCompetitionsChange((competitionsData) => {
+      setCompetitions(competitionsData);
+    });
+    
+    return () => {
+      unsubscribeStudents();
+      unsubscribeCompetitions();
+    };
   }, []);
 
-  const loadData = () => {
-    // Update student records first to get latest data
-    updateStudentRecords();
-    setStudents(getStudents());
-    setCompetitions(getCompetitions());
+  const loadData = async () => {
+    try {
+      // Update student records first to get latest data
+      await updateStudentRecords();
+      const [studentsData, competitionsData] = await Promise.all([
+        hybridStorage.getStudents(),
+        hybridStorage.getCompetitions()
+      ]);
+      setStudents(studentsData);
+      setCompetitions(competitionsData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
   };
 
-  const handleAddStudent = (e) => {
+  const handleAddStudent = async (e) => {
     e.preventDefault();
-    addStudent(newStudent);
-    setNewStudent({
-      name: '',
-      team: 'Team A',
-      year: '1st'
-    });
-    setShowAddForm(false);
-    loadData();
+    try {
+      await hybridStorage.addStudent(newStudent);
+      setNewStudent({
+        name: '',
+        team: 'Team A',
+        year: '1st'
+      });
+      setShowAddForm(false);
+      await loadData();
+    } catch (error) {
+      console.error('Error adding student:', error);
+      alert('Error adding student. Please try again.');
+    }
   };
 
   const handleRegisterForEvent = (studentId, competitionId) => {

@@ -5,17 +5,17 @@ import StudentSearch from './StudentSearch';
 import CompetitionsList from './CompetitionsList';
 import Leaderboard from './Leaderboard';
 import Gallery from './Gallery';
-import { 
-  getFestivalData, 
-  updateStudentRecords, 
-  getStudents, 
-  getCompetitions, 
-  getAnnouncements,
-  getGallery 
-} from '../../utils/localStorage';
+import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
 
 const StudentDashboard = ({ currentView }) => {
-  const festivalData = getFestivalData();
+  const [festivalData, setFestivalData] = useState({
+    name: 'RENDEZVOUS 2025',
+    logo: '🎭',
+    startDate: '2025-09-19',
+    endDate: '2025-09-20',
+    venue: 'MARKAZ MIHRAJ MALAYIL'
+  });
+  
   const [stats, setStats] = useState({
     totalCompetitions: 0,
     totalStudents: 0,
@@ -27,29 +27,114 @@ const StudentDashboard = ({ currentView }) => {
 
   // Update student records when dashboard loads
   useEffect(() => {
-    updateStudentRecords();
     loadStats();
+    loadFestivalData();
+    
+    // Set up real-time listeners for automatic updates
+    const unsubscribeStudents = hybridStorage.onStudentsChange(() => {
+      loadStats();
+    });
+    
+    const unsubscribeCompetitions = hybridStorage.onCompetitionsChange(() => {
+      loadStats();
+    });
+    
+    const unsubscribeAnnouncements = hybridStorage.onAnnouncementsChange(() => {
+      loadStats();
+    });
+    
+    const unsubscribeGallery = hybridStorage.onGalleryChange(() => {
+      loadStats();
+    });
+    
+    return () => {
+      unsubscribeStudents();
+      unsubscribeCompetitions();
+      unsubscribeAnnouncements();
+      unsubscribeGallery();
+    };
   }, [currentView]);
 
-  const loadStats = () => {
-    const students = getStudents();
-    const competitions = getCompetitions();
-    const announcements = getAnnouncements();
-    const gallery = getGallery();
+  const loadFestivalData = async () => {
+    try {
+      const data = await hybridStorage.getFestivalData();
+      setFestivalData(data);
+    } catch (error) {
+      console.error('Error loading festival data:', error);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      await updateStudentRecords();
+      
+      const [students, competitions, announcements, gallery] = await Promise.all([
+        hybridStorage.getStudents(),
+        hybridStorage.getCompetitions(),
+        hybridStorage.getAnnouncements(),
+        hybridStorage.getGallery()
+      ]);
+      
+      // Calculate days to festival
+      const startDate = new Date(festivalData.startDate);
+      const today = new Date();
+      const daysToGo = Math.max(0, Math.ceil((startDate - today) / (1000 * 60 * 60 * 24)));
+      
+      setStats({
+        totalCompetitions: competitions.length,
+        totalStudents: students.length,
+        daysToGo: daysToGo,
+        completedCompetitions: competitions.filter(c => c.status === 'completed').length,
+        activeAnnouncements: announcements.filter(a => a.active).length,
+        galleryImages: gallery.length
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  // Component for recent announcements
+  const RecentAnnouncements = () => {
+    const [announcements, setAnnouncements] = useState([]);
     
-    // Calculate days to festival
-    const startDate = new Date(festivalData.startDate);
-    const today = new Date();
-    const daysToGo = Math.max(0, Math.ceil((startDate - today) / (1000 * 60 * 60 * 24)));
+    useEffect(() => {
+      const loadAnnouncements = async () => {
+        try {
+          const data = await hybridStorage.getAnnouncements();
+          setAnnouncements(data.filter(a => a.active).slice(0, 3));
+        } catch (error) {
+          console.error('Error loading announcements:', error);
+        }
+      };
+      
+      loadAnnouncements();
+      
+      const unsubscribe = hybridStorage.onAnnouncementsChange((data) => {
+        setAnnouncements(data.filter(a => a.active).slice(0, 3));
+      });
+      
+      return () => unsubscribe();
+    }, []);
     
-    setStats({
-      totalCompetitions: competitions.length,
-      totalStudents: students.length,
-      daysToGo: daysToGo,
-      completedCompetitions: competitions.filter(c => c.status === 'completed').length,
-      activeAnnouncements: announcements.filter(a => a.active).length,
-      galleryImages: gallery.length
-    });
+    return (
+      <>
+        {announcements.map((announcement) => (
+          <div key={announcement.id} className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+            <span className="text-blue-600">📢</span>
+            <div>
+              <h4 className="font-medium text-blue-900">{announcement.title}</h4>
+              <p className="text-sm text-blue-700">{announcement.message}</p>
+            </div>
+          </div>
+        ))}
+        {announcements.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <span className="text-4xl mb-4 block">📢</span>
+            <p>No active announcements at the moment.</p>
+          </div>
+        )}
+      </>
+    );
   };
 
   const renderContent = () => {
@@ -128,21 +213,7 @@ const StudentDashboard = ({ currentView }) => {
                 </button>
               </div>
               <div className="space-y-3">
-                {getAnnouncements().filter(a => a.active).slice(0, 3).map((announcement, index) => (
-                  <div key={announcement.id} className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
-                    <span className="text-blue-600">📢</span>
-                    <div>
-                      <h4 className="font-medium text-blue-900">{announcement.title}</h4>
-                      <p className="text-sm text-blue-700">{announcement.message}</p>
-                    </div>
-                  </div>
-                ))}
-                {getAnnouncements().filter(a => a.active).length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <span className="text-4xl mb-4 block">📢</span>
-                    <p>No active announcements at the moment.</p>
-                  </div>
-                )}
+                <RecentAnnouncements />
               </div>
             </div>
           </div>

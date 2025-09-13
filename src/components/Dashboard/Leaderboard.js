@@ -1,5 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { getLeaderboard, getTeamLeaderboard, updateStudentRecords } from '../../utils/localStorage';
+import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
+
+// Helper functions for leaderboard calculation
+const getLeaderboard = async (limit = 10) => {
+  const students = await hybridStorage.getStudents();
+  return students
+    .sort((a, b) => (b.points || 0) - (a.points || 0))
+    .slice(0, limit);
+};
+
+const getTeamLeaderboard = async () => {
+  const students = await hybridStorage.getStudents();
+  const teamStats = students.reduce((acc, student) => {
+    const team = student.team || 'Unknown';
+    if (!acc[team]) {
+      acc[team] = {
+        team: team,
+        totalPoints: 0,
+        studentCount: 0,
+        avgPoints: 0
+      };
+    }
+    acc[team].totalPoints += student.points || 0;
+    acc[team].studentCount += 1;
+    return acc;
+  }, {});
+
+  return Object.values(teamStats)
+    .map(team => ({
+      ...team,
+      avgPoints: team.studentCount > 0 ? Math.round(team.totalPoints / team.studentCount) : 0
+    }))
+    .sort((a, b) => b.totalPoints - a.totalPoints);
+};
 
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -8,19 +41,30 @@ const Leaderboard = () => {
 
   useEffect(() => {
     loadLeaderboards();
+    
+    // Set up real-time listener for automatic updates
+    const unsubscribe = hybridStorage.onStudentsChange(() => {
+      loadLeaderboards();
+    });
+    
+    return () => unsubscribe();
   }, []);
 
-  const loadLeaderboards = () => {
-    // Update student records first
-    updateStudentRecords();
-    
-    // Individual leaderboard
-    const individualData = getLeaderboard(10);
-    setLeaderboard(individualData);
+  const loadLeaderboards = async () => {
+    try {
+      // Update student records first
+      await updateStudentRecords();
+      
+      // Individual leaderboard
+      const individualData = await getLeaderboard(10);
+      setLeaderboard(individualData);
 
-    // Team leaderboard
-    const teamData = getTeamLeaderboard();
-    setTeamLeaderboard(teamData);
+      // Team leaderboard
+      const teamData = await getTeamLeaderboard();
+      setTeamLeaderboard(teamData);
+    } catch (error) {
+      console.error('Error loading leaderboards:', error);
+    }
   };
 
   const getRankEmoji = (rank) => {
