@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { initializeData } from './utils/localStorage';
+import { initializeData, verifyDataPersistence, forceSaveAllData } from './utils/localStorage';
 import Navbar from './components/Layout/Navbar';
 import Login from './components/Auth/Login';
 import StudentDashboard from './components/Dashboard/StudentDashboard';
@@ -21,6 +21,29 @@ function AppContent() {
   useEffect(() => {
     // Initialize localStorage data on first load
     initializeData();
+    
+    // Verify data persistence
+    verifyDataPersistence();
+    
+    // Force save all data to ensure persistence
+    forceSaveAllData();
+    
+    // Set up periodic data saving (every 30 seconds)
+    const saveInterval = setInterval(() => {
+      forceSaveAllData();
+    }, 30000);
+    
+    // Save data before page unload
+    const handleBeforeUnload = () => {
+      forceSaveAllData();
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      clearInterval(saveInterval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
 
   const handleNavigation = (view) => {

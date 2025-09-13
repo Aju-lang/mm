@@ -1,19 +1,56 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import CountdownTimer from './CountdownTimer';
 import AnnouncementTicker from './AnnouncementTicker';
 import StudentSearch from './StudentSearch';
 import CompetitionsList from './CompetitionsList';
 import Leaderboard from './Leaderboard';
 import Gallery from './Gallery';
-import { getFestivalData, updateStudentRecords } from '../../utils/localStorage';
+import { 
+  getFestivalData, 
+  updateStudentRecords, 
+  getStudents, 
+  getCompetitions, 
+  getAnnouncements,
+  getGallery 
+} from '../../utils/localStorage';
 
 const StudentDashboard = ({ currentView }) => {
   const festivalData = getFestivalData();
+  const [stats, setStats] = useState({
+    totalCompetitions: 0,
+    totalStudents: 0,
+    daysToGo: 0,
+    completedCompetitions: 0,
+    activeAnnouncements: 0,
+    galleryImages: 0
+  });
 
   // Update student records when dashboard loads
   useEffect(() => {
     updateStudentRecords();
+    loadStats();
   }, [currentView]);
+
+  const loadStats = () => {
+    const students = getStudents();
+    const competitions = getCompetitions();
+    const announcements = getAnnouncements();
+    const gallery = getGallery();
+    
+    // Calculate days to festival
+    const startDate = new Date(festivalData.startDate);
+    const today = new Date();
+    const daysToGo = Math.max(0, Math.ceil((startDate - today) / (1000 * 60 * 60 * 24)));
+    
+    setStats({
+      totalCompetitions: competitions.length,
+      totalStudents: students.length,
+      daysToGo: daysToGo,
+      completedCompetitions: competitions.filter(c => c.status === 'completed').length,
+      activeAnnouncements: announcements.filter(a => a.active).length,
+      galleryImages: gallery.length
+    });
+  };
 
   const renderContent = () => {
     switch (currentView) {
@@ -46,49 +83,66 @@ const StudentDashboard = ({ currentView }) => {
             <StudentSearch />
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
               <div className="card text-center">
                 <div className="text-3xl mb-2">🎯</div>
-                <div className="text-2xl font-bold text-primary-600">5</div>
+                <div className="text-2xl font-bold text-primary-600">{stats.totalCompetitions}</div>
                 <div className="text-sm text-gray-600">Total Competitions</div>
               </div>
               <div className="card text-center">
                 <div className="text-3xl mb-2">👥</div>
-                <div className="text-2xl font-bold text-secondary-600">10</div>
+                <div className="text-2xl font-bold text-secondary-600">{stats.totalStudents}</div>
                 <div className="text-sm text-gray-600">Registered Students</div>
               </div>
               <div className="card text-center">
-                <div className="text-3xl mb-2">🏆</div>
-                <div className="text-2xl font-bold text-green-600">3</div>
+                <div className="text-3xl mb-2">⏰</div>
+                <div className="text-2xl font-bold text-green-600">{stats.daysToGo}</div>
                 <div className="text-sm text-gray-600">Days to Go</div>
+              </div>
+              <div className="card text-center">
+                <div className="text-3xl mb-2">✅</div>
+                <div className="text-2xl font-bold text-purple-600">{stats.completedCompetitions}</div>
+                <div className="text-sm text-gray-600">Completed Events</div>
+              </div>
+              <div className="card text-center">
+                <div className="text-3xl mb-2">📢</div>
+                <div className="text-2xl font-bold text-yellow-600">{stats.activeAnnouncements}</div>
+                <div className="text-sm text-gray-600">Active Announcements</div>
+              </div>
+              <div className="card text-center">
+                <div className="text-3xl mb-2">📸</div>
+                <div className="text-2xl font-bold text-pink-600">{stats.galleryImages}</div>
+                <div className="text-sm text-gray-600">Gallery Images</div>
               </div>
             </div>
 
             {/* Recent Updates */}
             <div className="card">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">📢 Recent Updates</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900">📢 Recent Updates</h3>
+                <button
+                  onClick={loadStats}
+                  className="btn-outline text-sm"
+                >
+                  Refresh
+                </button>
+              </div>
               <div className="space-y-3">
-                <div className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
-                  <span className="text-blue-600">ℹ️</span>
-                  <div>
-                    <h4 className="font-medium text-blue-900">Registration Extended</h4>
-                    <p className="text-sm text-blue-700">Registration deadline has been extended to October 12th due to high demand.</p>
+                {getAnnouncements().filter(a => a.active).slice(0, 3).map((announcement, index) => (
+                  <div key={announcement.id} className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                    <span className="text-blue-600">📢</span>
+                    <div>
+                      <h4 className="font-medium text-blue-900">{announcement.title}</h4>
+                      <p className="text-sm text-blue-700">{announcement.message}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
-                  <span className="text-green-600">✅</span>
-                  <div>
-                    <h4 className="font-medium text-green-900">New Competition Added</h4>
-                    <p className="text-sm text-green-700">Photography Contest has been added to the event lineup. Check it out!</p>
+                ))}
+                {getAnnouncements().filter(a => a.active).length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <span className="text-4xl mb-4 block">📢</span>
+                    <p>No active announcements at the moment.</p>
                   </div>
-                </div>
-                <div className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
-                  <span className="text-yellow-600">⚠️</span>
-                  <div>
-                    <h4 className="font-medium text-yellow-900">Venue Change</h4>
-                    <p className="text-sm text-yellow-700">Dance Battle venue has been moved to the Main Auditorium.</p>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>

@@ -4,6 +4,7 @@ import {
   getCompetitions,
   addCompetition,
   deleteCompetition,
+  updateCompetition,
   getFestivalData,
   getStudents,
   updateStudentRecords
@@ -203,12 +204,8 @@ const EnhancedCompetitionManager = () => {
 
   // Update competition data in localStorage
   const updateCompetitionData = (competitionId, updates) => {
-    const updatedCompetitions = competitions.map(c =>
-      c.id === competitionId ? { ...c, ...updates } : c
-    );
-    
-    localStorage.setItem('festival_competitions', JSON.stringify(updatedCompetitions));
-    setCompetitions(updatedCompetitions);
+    updateCompetition(competitionId, updates);
+    loadData(); // Reload data to ensure consistency
   };
 
 

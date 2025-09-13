@@ -4,7 +4,8 @@ import {
   addStudent,
   updateStudent,
   getCompetitions,
-  registerStudentForEvent
+  registerStudentForEvent,
+  updateStudentRecords
 } from '../../utils/localStorage';
 
 const StudentManager = () => {
@@ -26,6 +27,8 @@ const StudentManager = () => {
   }, []);
 
   const loadData = () => {
+    // Update student records first to get latest data
+    updateStudentRecords();
     setStudents(getStudents());
     setCompetitions(getCompetitions());
   };
@@ -282,38 +285,39 @@ const StudentManager = () => {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                     <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{student.events.length}</div>
-                      <div className="text-sm text-blue-700">Events Registered</div>
+                      <div className="text-2xl font-bold text-blue-600">{student.competitionsRegistered || 0}</div>
+                      <div className="text-sm text-blue-700">Competitions Registered</div>
                     </div>
                     <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{student.results.length}</div>
-                      <div className="text-sm text-green-700">Competitions Done</div>
+                      <div className="text-2xl font-bold text-green-600">{student.competitionsCompleted || 0}</div>
+                      <div className="text-sm text-green-700">Competitions Completed</div>
                     </div>
                     <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                      <div className="text-2xl font-bold text-yellow-600">{student.points}</div>
+                      <div className="text-2xl font-bold text-yellow-600">{student.points || 0}</div>
                       <div className="text-sm text-yellow-700">Total Points</div>
+                    </div>
+                    <div className="text-center p-3 bg-purple-50 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">{student.results ? student.results.length : 0}</div>
+                      <div className="text-sm text-purple-700">Results Available</div>
                     </div>
                   </div>
                   
-                  {student.events.length > 0 && (
+                  {student.events && student.events.length > 0 && (
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-2">Registered Events</h4>
                       <div className="flex flex-wrap gap-2">
-                        {student.events.map(eventId => {
-                          const competition = competitions.find(c => c.id === eventId);
-                          return competition ? (
-                            <span key={eventId} className="badge badge-primary">
-                              {competition.name}
-                            </span>
-                          ) : null;
-                        })}
+                        {student.events.map((eventName, index) => (
+                          <span key={index} className="badge badge-primary">
+                            {eventName}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   )}
                   
-                  {student.results.length > 0 && (
+                  {student.results && student.results.length > 0 && (
                     <div className="mt-4">
                       <h4 className="font-semibold text-gray-900 mb-2">Recent Results</h4>
                       <div className="space-y-2">
@@ -321,11 +325,20 @@ const StudentManager = () => {
                           <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
                             <span className="text-sm font-medium">{result.competitionName}</span>
                             <div className="flex items-center space-x-2">
-                              <span className="badge badge-success">
-                                Position {result.position}
-                              </span>
+                              {result.prize && (
+                                <span className="badge badge-success">
+                                  {result.prize === '1' ? '🥇 1st' : 
+                                   result.prize === '2' ? '🥈 2nd' : 
+                                   result.prize === '3' ? '🥉 3rd' : `Prize: ${result.prize}`}
+                                </span>
+                              )}
+                              {result.reported && (
+                                <span className="badge badge-primary">
+                                  ✓ Participated
+                                </span>
+                              )}
                               <span className="text-sm text-green-600 font-medium">
-                                +{result.points} pts
+                                +{result.points || 0} pts
                               </span>
                             </div>
                           </div>
@@ -337,19 +350,10 @@ const StudentManager = () => {
                 
                 <div className="flex flex-col space-y-2">
                   <button
-                    onClick={() => {
-                      setSelectedStudent(student);
-                      setShowRegistrationModal(true);
-                    }}
-                    className="btn-secondary text-sm"
-                  >
-                    📝 Register
-                  </button>
-                  <button
                     onClick={() => setSelectedStudent(student)}
                     className="btn-outline text-sm"
                   >
-                    👁️ View
+                    👁️ View Details
                   </button>
                 </div>
               </div>

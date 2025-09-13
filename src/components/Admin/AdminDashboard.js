@@ -3,16 +3,19 @@ import {
   getStudents, 
   getCompetitions, 
   getAnnouncements,
-  getFestivalData 
+  getFestivalData,
+  getGallery,
+  updateStudentRecords
 } from '../../utils/localStorage';
-import DataReset from './DataReset';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalCompetitions: 0,
     activeAnnouncements: 0,
-    completedCompetitions: 0
+    completedCompetitions: 0,
+    totalGalleryImages: 0,
+    studentsWithResults: 0
   });
 
   const [recentActivity, setRecentActivity] = useState([]);
@@ -26,46 +29,73 @@ const AdminDashboard = () => {
     const competitions = getCompetitions();
     const announcements = getAnnouncements();
 
+    const gallery = getGallery();
+    
+    // Update student records first
+    updateStudentRecords();
+
     setStats({
       totalStudents: students.length,
       totalCompetitions: competitions.length,
       activeAnnouncements: announcements.filter(a => a.active).length,
-      completedCompetitions: competitions.filter(c => c.status === 'completed').length
+      completedCompetitions: competitions.filter(c => c.status === 'completed').length,
+      totalGalleryImages: gallery.length,
+      studentsWithResults: students.filter(s => s.results && s.results.length > 0).length
     });
 
-    // Generate recent activity (mock data for now)
-    const activities = [
-      {
-        id: 1,
-        type: 'student_registered',
-        message: 'New student registered for Coding Challenge',
-        time: '2 minutes ago',
-        icon: '👤'
-      },
-      {
-        id: 2,
-        type: 'competition_updated',
-        message: 'Web Design Contest results updated',
-        time: '15 minutes ago',
+    // Generate real recent activity based on actual data
+    const activities = [];
+    
+    // Recent competitions
+    const recentCompetitions = competitions
+      .filter(c => c.status === 'completed')
+      .slice(-2)
+      .map(c => ({
+        id: `comp-${c.id}`,
+        type: 'competition_completed',
+        message: `${c.name} completed with results`,
+        time: 'Recently',
         icon: '🏆'
-      },
-      {
-        id: 3,
-        type: 'announcement_created',
-        message: 'New announcement posted',
-        time: '1 hour ago',
+      }));
+    
+    // Recent announcements
+    const recentAnnouncements = announcements
+      .filter(a => a.active)
+      .slice(-2)
+      .map(a => ({
+        id: `ann-${a.id}`,
+        type: 'announcement_active',
+        message: `${a.title} is active`,
+        time: 'Recently',
         icon: '📢'
-      },
-      {
-        id: 4,
-        type: 'student_registered',
-        message: 'Student registered for Dance Battle',
-        time: '2 hours ago',
-        icon: '👤'
-      }
-    ];
+      }));
+    
+    // Gallery updates
+    if (gallery.length > 0) {
+      activities.push({
+        id: 'gallery-update',
+        type: 'gallery_updated',
+        message: `${gallery.length} images in gallery`,
+        time: 'Recently',
+        icon: '📸'
+      });
+    }
+    
+    // Student participation
+    const participatingStudents = students.filter(s => s.events && s.events.length > 0).length;
+    if (participatingStudents > 0) {
+      activities.push({
+        id: 'student-participation',
+        type: 'student_participation',
+        message: `${participatingStudents} students participating in events`,
+        time: 'Recently',
+        icon: '👥'
+      });
+    }
 
-    setRecentActivity(activities);
+    const allActivities = [...recentCompetitions, ...recentAnnouncements, ...activities].slice(0, 5);
+
+    setRecentActivity(allActivities);
   };
 
   const festivalData = getFestivalData();
@@ -95,7 +125,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
           <StatCard
             title="Total Students"
             value={stats.totalStudents}
@@ -111,18 +141,32 @@ const AdminDashboard = () => {
             description="Total events"
           />
           <StatCard
-            title="Active Announcements"
-            value={stats.activeAnnouncements}
-            icon="📢"
-            color="text-yellow-600"
-            description="Currently displayed"
-          />
-          <StatCard
             title="Completed Events"
             value={stats.completedCompetitions}
             icon="✅"
             color="text-purple-600"
             description="Results available"
+          />
+          <StatCard
+            title="Students with Results"
+            value={stats.studentsWithResults}
+            icon="🏆"
+            color="text-orange-600"
+            description="Have participated"
+          />
+          <StatCard
+            title="Gallery Images"
+            value={stats.totalGalleryImages}
+            icon="📸"
+            color="text-pink-600"
+            description="Photos uploaded"
+          />
+          <StatCard
+            title="Announcements"
+            value={stats.activeAnnouncements}
+            icon="📢"
+            color="text-yellow-600"
+            description="Currently active"
           />
         </div>
 
@@ -229,10 +273,6 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Data Reset Section */}
-          <div className="mt-8">
-            <DataReset onReset={() => loadDashboardData()} />
-          </div>
         </div>
       </div>
     </div>

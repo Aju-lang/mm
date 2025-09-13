@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getStudentByCode, getCompetitions } from '../../utils/localStorage';
+import { getStudentByCode, getCompetitions, updateStudentRecords } from '../../utils/localStorage';
 
 const StudentSearch = () => {
   const [searchCode, setSearchCode] = useState('');
@@ -18,6 +18,9 @@ const StudentSearch = () => {
     setError('');
     
     try {
+      // Update student records first to get latest data
+      updateStudentRecords();
+      
       const foundStudent = getStudentByCode(searchCode.trim().toUpperCase());
       if (foundStudent) {
         setStudent(foundStudent);
@@ -96,14 +99,18 @@ const StudentSearch = () => {
                 <div className="text-sm text-gray-600">Total Points</div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
-                <span className="text-gray-500">Department:</span>
-                <span className="ml-2 font-medium">{student.department}</span>
+                <span className="text-gray-500">Team:</span>
+                <span className="ml-2 font-medium">{student.team}</span>
               </div>
               <div>
                 <span className="text-gray-500">Year:</span>
                 <span className="ml-2 font-medium">{student.year}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Competitions:</span>
+                <span className="ml-2 font-medium">{student.competitionsRegistered || 0}</span>
               </div>
             </div>
           </div>
@@ -111,13 +118,11 @@ const StudentSearch = () => {
           {/* Registered Events */}
           <div className="mb-6">
             <h4 className="text-lg font-semibold text-gray-900 mb-3">📝 Registered Events</h4>
-            {student.events.length > 0 ? (
+            {student.events && student.events.length > 0 ? (
               <div className="grid gap-3">
-                {student.events.map((eventId) => (
-                  <div key={eventId} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <span className="font-medium text-gray-900">
-                      {getCompetitionName(eventId)}
-                    </span>
+                {student.events.map((eventName, index) => (
+                  <div key={index} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <span className="font-medium text-gray-900">{eventName}</span>
                   </div>
                 ))}
               </div>
@@ -129,25 +134,31 @@ const StudentSearch = () => {
           {/* Results */}
           <div>
             <h4 className="text-lg font-semibold text-gray-900 mb-3">🏆 Results</h4>
-            {student.results.length > 0 ? (
+            {student.results && student.results.length > 0 ? (
               <div className="grid gap-3">
                 {student.results.map((result, index) => (
                   <div key={index} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <h5 className="font-semibold text-gray-900">{result.competitionName}</h5>
-                        <p className="text-sm text-gray-500">
-                          {new Date(result.date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span className={`badge border ${getPositionBadge(result.position)}`}>
-                          {getPositionEmoji(result.position)} Position {result.position}
-                        </span>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-primary-600">+{result.points}</div>
-                          <div className="text-xs text-gray-500">points</div>
+                        <div className="flex items-center space-x-2 mt-1">
+                          {result.reported && (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                              ✓ Participated
+                            </span>
+                          )}
+                          {result.prize && (
+                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                              {result.prize === '1' ? '🥇 1st Place' : 
+                               result.prize === '2' ? '🥈 2nd Place' : 
+                               result.prize === '3' ? '🥉 3rd Place' : `Prize: ${result.prize}`}
+                            </span>
+                          )}
                         </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-primary-600">+{result.points || 0}</div>
+                        <div className="text-xs text-gray-500">points</div>
                       </div>
                     </div>
                   </div>

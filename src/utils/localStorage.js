@@ -534,3 +534,52 @@ export const updateStudentRecords = () => {
   setStudents(updatedStudents);
   return updatedStudents;
 };
+
+// Data persistence verification
+export const verifyDataPersistence = () => {
+  const keys = Object.values(STORAGE_KEYS);
+  const status = {};
+  
+  keys.forEach(key => {
+    try {
+      const data = localStorage.getItem(key);
+      status[key] = {
+        exists: !!data,
+        size: data ? data.length : 0,
+        lastModified: new Date().toISOString()
+      };
+    } catch (error) {
+      status[key] = {
+        exists: false,
+        error: error.message
+      };
+    }
+  });
+  
+  console.log('Data Persistence Status:', status);
+  return status;
+};
+
+// Force save all current data
+export const forceSaveAllData = () => {
+  try {
+    // Re-save all data to ensure persistence
+    const students = getStudents();
+    const competitions = getCompetitions();
+    const announcements = getAnnouncements();
+    const gallery = getGallery();
+    const festivalData = getFestivalData();
+    
+    setStudents(students);
+    setCompetitions(competitions);
+    setAnnouncements(announcements);
+    setGallery(gallery);
+    setData(STORAGE_KEYS.FESTIVAL_DATA, festivalData);
+    
+    console.log('All data force-saved to localStorage');
+    return true;
+  } catch (error) {
+    console.error('Error force-saving data:', error);
+    return false;
+  }
+};
