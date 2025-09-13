@@ -1,0 +1,430 @@
+import {
+  studentsService,
+  competitionsService,
+  announcementsService,
+  galleryService,
+  festivalDataService,
+  initializeFirebaseData
+} from './firebaseService';
+
+// Fallback to localStorage if Firebase is not available
+import * as localStorageUtils from './localStorage';
+
+// Connection state
+let isOnline = navigator.onLine;
+let useFirebase = true;
+
+// Listen for online/offline events
+window.addEventListener('online', () => {
+  isOnline = true;
+  console.log('Back online - switching to Firebase');
+  syncLocalToFirebase();
+});
+
+window.addEventListener('offline', () => {
+  isOnline = false;
+  console.log('Offline - using localStorage');
+});
+
+// Check if Firebase is available
+const checkFirebaseConnection = async () => {
+  try {
+    await festivalDataService.get();
+    useFirebase = true;
+    return true;
+  } catch (error) {
+    console.warn('Firebase not available, using localStorage:', error.message);
+    useFirebase = false;
+    return false;
+  }
+};
+
+// Sync localStorage data to Firebase when back online
+const syncLocalToFirebase = async () => {
+  if (!isOnline || !useFirebase) return;
+
+  try {
+    console.log('Syncing local data to Firebase...');
+    
+    // Sync students
+    const localStudents = localStorageUtils.getStudents();
+    const firebaseStudents = await studentsService.getAll();
+    
+    // Simple sync - update Firebase with localStorage data if different
+    for (const localStudent of localStudents) {
+      const firebaseStudent = firebaseStudents.find(s => s.code === localStudent.code);
+      if (!firebaseStudent) {
+        await studentsService.create(localStudent);
+      } else if (JSON.stringify(localStudent) !== JSON.stringify(firebaseStudent)) {
+        await studentsService.update(firebaseStudent.id, localStudent);
+      }
+    }
+
+    // Similar sync for other collections...
+    console.log('Sync complete');
+  } catch (error) {
+    console.error('Error syncing to Firebase:', error);
+  }
+};
+
+// Hybrid service that uses Firebase when available, localStorage as fallback
+export const hybridStorage = {
+  // Initialize the system
+  async initialize() {
+    const firebaseAvailable = await checkFirebaseConnection();
+    
+    if (firebaseAvailable) {
+      try {
+        await initializeFirebaseData();
+        console.log('Using Firebase for data storage');
+      } catch (error) {
+        console.error('Firebase initialization failed, falling back to localStorage');
+        useFirebase = false;
+        localStorageUtils.initializeData();
+      }
+    } else {
+      console.log('Using localStorage for data storage');
+      localStorageUtils.initializeData();
+    }
+  },
+
+  // Students
+  async getStudents() {
+    if (useFirebase && isOnline) {
+      try {
+        const students = await studentsService.getAll();
+        // Cache in localStorage for offline access
+        localStorageUtils.setStudents(students);
+        return students;
+      } catch (error) {
+        console.error('Firebase error, using localStorage:', error);
+        return localStorageUtils.getStudents();
+      }
+    }
+    return localStorageUtils.getStudents();
+  },
+
+  async addStudent(student) {
+    // Always update localStorage first
+    localStorageUtils.addStudent(student);
+    
+    if (useFirebase && isOnline) {
+      try {
+        const result = await studentsService.create(student);
+        return result;
+      } catch (error) {
+        console.error('Firebase error, data saved locally:', error);
+        return student;
+      }
+    }
+    return student;
+  },
+
+  async updateStudent(studentId, updates) {
+    // Update localStorage
+    const students = localStorageUtils.getStudents();
+    const index = students.findIndex(s => s.id === studentId || s.code === updates.code);
+    if (index !== -1) {
+      students[index] = { ...students[index], ...updates };
+      localStorageUtils.setStudents(students);
+    }
+
+    if (useFirebase && isOnline) {
+      try {
+        const result = await studentsService.update(studentId, updates);
+        return result;
+      } catch (error) {
+        console.error('Firebase error, data saved locally:', error);
+        return updates;
+      }
+    }
+    return updates;
+  },
+
+  async getStudentByCode(code) {
+    if (useFirebase && isOnline) {
+      try {
+        const student = await studentsService.getByCode(code);
+        return student;
+      } catch (error) {
+        console.error('Firebase error, using localStorage:', error);
+        return localStorageUtils.getStudentByCode(code);
+      }
+    }
+    return localStorageUtils.getStudentByCode(code);
+  },
+
+  // Competitions
+  async getCompetitions() {
+    if (useFirebase && isOnline) {
+      try {
+        const competitions = await competitionsService.getAll();
+        // Cache in localStorage
+        localStorageUtils.setCompetitions(competitions);
+        return competitions;
+      } catch (error) {
+        console.error('Firebase error, using localStorage:', error);
+        return localStorageUtils.getCompetitions();
+      }
+    }
+    return localStorageUtils.getCompetitions();
+  },
+
+  async addCompetition(competition) {
+    // Always update localStorage first
+    const result = localStorageUtils.addCompetition(competition);
+    
+    if (useFirebase && isOnline) {
+      try {
+        await competitionsService.create(competition);
+      } catch (error) {
+        console.error('Firebase error, data saved locally:', error);
+      }
+    }
+    return result;
+  },
+
+  async updateCompetition(competitionId, updates) {
+    // Update localStorage
+    localStorageUtils.updateCompetition(competitionId, updates);
+
+    if (useFirebase && isOnline) {
+      try {
+        await competitionsService.update(competitionId, updates);
+      } catch (error) {
+        console.error('Firebase error, data saved locally:', error);
+      }
+    }
+    return updates;
+  },
+
+  async deleteCompetition(competitionId) {
+    // Delete from localStorage
+    localStorageUtils.deleteCompetition(competitionId);
+
+    if (useFirebase && isOnline) {
+      try {
+        await competitionsService.delete(competitionId);
+      } catch (error) {
+        console.error('Firebase error, data deleted locally:', error);
+      }
+    }
+  },
+
+  // Announcements
+  async getAnnouncements() {
+    if (useFirebase && isOnline) {
+      try {
+        const announcements = await announcementsService.getAll();
+        // Cache in localStorage
+        localStorageUtils.setAnnouncements(announcements);
+        return announcements;
+      } catch (error) {
+        console.error('Firebase error, using localStorage:', error);
+        return localStorageUtils.getAnnouncements();
+      }
+    }
+    return localStorageUtils.getAnnouncements();
+  },
+
+  async addAnnouncement(announcement) {
+    localStorageUtils.addAnnouncement(announcement);
+    
+    if (useFirebase && isOnline) {
+      try {
+        await announcementsService.create(announcement);
+      } catch (error) {
+        console.error('Firebase error, data saved locally:', error);
+      }
+    }
+    return announcement;
+  },
+
+  async updateAnnouncement(announcementId, updates) {
+    localStorageUtils.updateAnnouncement(announcementId, updates);
+
+    if (useFirebase && isOnline) {
+      try {
+        await announcementsService.update(announcementId, updates);
+      } catch (error) {
+        console.error('Firebase error, data saved locally:', error);
+      }
+    }
+    return updates;
+  },
+
+  async deleteAnnouncement(announcementId) {
+    localStorageUtils.deleteAnnouncement(announcementId);
+
+    if (useFirebase && isOnline) {
+      try {
+        await announcementsService.delete(announcementId);
+      } catch (error) {
+        console.error('Firebase error, data deleted locally:', error);
+      }
+    }
+  },
+
+  // Gallery
+  async getGallery() {
+    if (useFirebase && isOnline) {
+      try {
+        const gallery = await galleryService.getAll();
+        localStorageUtils.setGallery(gallery);
+        return gallery;
+      } catch (error) {
+        console.error('Firebase error, using localStorage:', error);
+        return localStorageUtils.getGallery();
+      }
+    }
+    return localStorageUtils.getGallery();
+  },
+
+  async addGalleryImage(image) {
+    localStorageUtils.addGalleryImage(image);
+    
+    if (useFirebase && isOnline) {
+      try {
+        await galleryService.create(image);
+      } catch (error) {
+        console.error('Firebase error, data saved locally:', error);
+      }
+    }
+    return image;
+  },
+
+  async deleteGalleryImage(imageId) {
+    localStorageUtils.deleteGalleryImage(imageId);
+
+    if (useFirebase && isOnline) {
+      try {
+        await galleryService.delete(imageId);
+      } catch (error) {
+        console.error('Firebase error, data deleted locally:', error);
+      }
+    }
+  },
+
+  // Festival Data
+  async getFestivalData() {
+    if (useFirebase && isOnline) {
+      try {
+        const data = await festivalDataService.get();
+        if (data) {
+          localStorageUtils.setData('festival_data', data);
+          return data;
+        }
+      } catch (error) {
+        console.error('Firebase error, using localStorage:', error);
+      }
+    }
+    return localStorageUtils.getFestivalData();
+  },
+
+  // Real-time listeners (Firebase only)
+  onStudentsChange(callback) {
+    if (useFirebase && isOnline) {
+      return studentsService.onSnapshot(callback);
+    }
+    return () => {}; // Return empty unsubscribe function
+  },
+
+  onCompetitionsChange(callback) {
+    if (useFirebase && isOnline) {
+      return competitionsService.onSnapshot(callback);
+    }
+    return () => {};
+  },
+
+  onAnnouncementsChange(callback) {
+    if (useFirebase && isOnline) {
+      return announcementsService.onSnapshot(callback);
+    }
+    return () => {};
+  },
+
+  onGalleryChange(callback) {
+    if (useFirebase && isOnline) {
+      return galleryService.onSnapshot(callback);
+    }
+    return () => {};
+  },
+
+  // Utility functions
+  isUsingFirebase() {
+    return useFirebase && isOnline;
+  },
+
+  isOnline() {
+    return isOnline;
+  },
+
+  async forceSync() {
+    if (isOnline && useFirebase) {
+      await syncLocalToFirebase();
+    }
+  }
+};
+
+// Auto-update student records
+export const updateStudentRecords = async () => {
+  const students = await hybridStorage.getStudents();
+  const competitions = await hybridStorage.getCompetitions();
+  
+  const updatedStudents = students.map(student => {
+    // Find competitions this student is registered for
+    const registeredCompetitions = competitions.filter(comp => 
+      comp.participants && comp.participants.some(p => p.id === student.id || p.studentCode === student.code)
+    );
+    
+    // Find completed competitions
+    const completedCompetitions = registeredCompetitions.filter(comp => comp.status === 'completed');
+    
+    // Calculate total points from all competitions
+    let totalPoints = 0;
+    const results = [];
+    
+    registeredCompetitions.forEach(comp => {
+      const participation = comp.participants.find(p => p.id === student.id || p.studentCode === student.code);
+      if (participation) {
+        // Add points from prizes
+        if (participation.prize === '1') totalPoints += 10;
+        else if (participation.prize === '2') totalPoints += 7;
+        else if (participation.prize === '3') totalPoints += 5;
+        else if (participation.reported) totalPoints += 2; // Participation points
+        
+        // Add custom points
+        if (participation.customPoints) totalPoints += participation.customPoints;
+        
+        // Add to results
+        if (participation.prize || participation.reported) {
+          results.push({
+            competitionId: comp.id,
+            competitionName: comp.name,
+            prize: participation.prize,
+            points: participation.customPoints || 0,
+            reported: participation.reported
+          });
+        }
+      }
+    });
+    
+    return {
+      ...student,
+      events: registeredCompetitions.map(comp => comp.name),
+      results: results,
+      points: totalPoints,
+      competitionsRegistered: registeredCompetitions.length,
+      competitionsCompleted: completedCompetitions.length
+    };
+  });
+  
+  // Update each student
+  for (const student of updatedStudents) {
+    await hybridStorage.updateStudent(student.id, student);
+  }
+  
+  return updatedStudents;
+};
+
+export default hybridStorage;

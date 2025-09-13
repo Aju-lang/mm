@@ -1,14 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
-import {
-  getCompetitions,
-  addCompetition,
-  deleteCompetition,
-  updateCompetition,
-  getFestivalData,
-  getStudents,
-  updateStudentRecords
-} from '../../utils/localStorage';
+import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
 
 const EnhancedCompetitionManager = () => {
   const [competitions, setCompetitions] = useState([]);
@@ -32,13 +24,35 @@ const EnhancedCompetitionManager = () => {
 
   useEffect(() => {
     loadData();
+    
+    // Set up real-time listeners for multi-device sync
+    const unsubscribeCompetitions = hybridStorage.onCompetitionsChange((competitionsData) => {
+      setCompetitions(competitionsData);
+    });
+    
+    const unsubscribeStudents = hybridStorage.onStudentsChange((studentsData) => {
+      setStudents(studentsData);
+    });
+    
+    return () => {
+      unsubscribeCompetitions();
+      unsubscribeStudents();
+    };
   }, []);
 
-  const loadData = () => {
-    setCompetitions(getCompetitions());
-    setStudents(getStudents());
-    // Update student records automatically
-    updateStudentRecords();
+  const loadData = async () => {
+    try {
+      const [competitionsData, studentsData] = await Promise.all([
+        hybridStorage.getCompetitions(),
+        hybridStorage.getStudents()
+      ]);
+      setCompetitions(competitionsData);
+      setStudents(studentsData);
+      // Update student records automatically
+      await updateStudentRecords();
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
   };
 
   const handleAddCompetition = (e) => {
@@ -97,7 +111,7 @@ const EnhancedCompetitionManager = () => {
     
     delete competition.participantNames;
     
-    addCompetition(competition);
+    hybridStorage.addCompetition(competition);
     console.log('Added competition with participants:', competition.participants);
     
     // Reset form
@@ -116,10 +130,10 @@ const EnhancedCompetitionManager = () => {
     loadData();
   };
 
-  const handleDeleteCompetition = (id) => {
+  const handleDeleteCompetition = async (id) => {
     if (window.confirm('Are you sure you want to delete this competition?')) {
-      deleteCompetition(id);
-      loadData();
+      await hybridStorage.deleteCompetition(id);
+      await loadData();
     }
   };
 
@@ -202,10 +216,10 @@ const EnhancedCompetitionManager = () => {
     updateCompetitionData(competitionId, { participants: updatedParticipants });
   };
 
-  // Update competition data in localStorage
-  const updateCompetitionData = (competitionId, updates) => {
-    updateCompetition(competitionId, updates);
-    loadData(); // Reload data to ensure consistency
+  // Update competition data in database
+  const updateCompetitionData = async (competitionId, updates) => {
+    await hybridStorage.updateCompetition(competitionId, updates);
+    await loadData(); // Reload data to ensure consistency
   };
 
 
@@ -449,7 +463,19 @@ const EnhancedCompetitionManager = () => {
   const ReportingModal = ({ competition, onClose }) => {
     if (!competition) return null;
 
-    const festivalData = getFestivalData();
+    const [festivalData, setFestivalData] = useState({
+      name: 'RENDEZVOUS 2025',
+      logo: '🎭',
+      venue: 'MARKAZ MIHRAJ MALAYIL'
+    });
+
+    useEffect(() => {
+      const loadFestivalData = async () => {
+        const data = await hybridStorage.getFestivalData();
+        setFestivalData(data);
+      };
+      loadFestivalData();
+    }, []);
     const winners = competition.participants?.filter(p => p.prize && ['1', '2', '3'].includes(p.prize)) || [];
     
     // Debug log to check participants

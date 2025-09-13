@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { initializeData, verifyDataPersistence, forceSaveAllData } from './utils/localStorage';
+import { hybridStorage } from './utils/hybridStorage';
 import Navbar from './components/Layout/Navbar';
 import Login from './components/Auth/Login';
 import StudentDashboard from './components/Dashboard/StudentDashboard';
@@ -19,29 +19,36 @@ function AppContent() {
   const { isAuthenticated, loading } = useAuth();
 
   useEffect(() => {
-    // Initialize localStorage data on first load
-    initializeData();
+    // Initialize hybrid storage system (Firebase + localStorage)
+    const initializeApp = async () => {
+      try {
+        await hybridStorage.initialize();
+        console.log('App initialized with hybrid storage');
+      } catch (error) {
+        console.error('Error initializing app:', error);
+      }
+    };
+
+    initializeApp();
     
-    // Verify data persistence
-    verifyDataPersistence();
-    
-    // Force save all data to ensure persistence
-    forceSaveAllData();
-    
-    // Set up periodic data saving (every 30 seconds)
-    const saveInterval = setInterval(() => {
-      forceSaveAllData();
+    // Set up periodic sync (every 30 seconds)
+    const syncInterval = setInterval(async () => {
+      if (hybridStorage.isOnline()) {
+        await hybridStorage.forceSync();
+      }
     }, 30000);
     
-    // Save data before page unload
-    const handleBeforeUnload = () => {
-      forceSaveAllData();
+    // Sync data before page unload
+    const handleBeforeUnload = async () => {
+      if (hybridStorage.isOnline()) {
+        await hybridStorage.forceSync();
+      }
     };
     
     window.addEventListener('beforeunload', handleBeforeUnload);
     
     return () => {
-      clearInterval(saveInterval);
+      clearInterval(syncInterval);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
