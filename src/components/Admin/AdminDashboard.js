@@ -131,6 +131,7 @@ const AdminDashboard = () => {
   const [isClearingCompetitions, setIsClearingCompetitions] = useState(false);
   const [isRunningDiagnostics, setIsRunningDiagnostics] = useState(false);
   const [isTestingRealTime, setIsTestingRealTime] = useState(false);
+  const [isTestingCrossDevice, setIsTestingCrossDevice] = useState(false);
   const [realTimeStatus, setRealTimeStatus] = useState('Not tested');
 
   useEffect(() => {
@@ -342,6 +343,43 @@ Error: ${error.message}
 Check console for detailed logs.`);
     } finally {
       setIsTestingRealTime(false);
+      // Refresh dashboard data
+      await loadDashboardData();
+    }
+  };
+
+  const handleTestCrossDeviceSync = async () => {
+    setIsTestingCrossDevice(true);
+    
+    try {
+      const testResult = await hybridStorage.testCrossDeviceSync();
+      
+      let message = '📱 **Cross-Device Sync Test Results:**\n\n';
+      
+      if (testResult.success) {
+        message += '🎉 **RESULT: Cross-device sync is working perfectly!**\n\n';
+        message += '✅ Competition was successfully saved to Firebase\n';
+        message += '✅ Data is synchronized across devices\n';
+        message += '✅ Other devices should see new competitions immediately\n\n';
+        message += 'Your competitions should now be visible on all devices using the same Firebase project.';
+      } else {
+        message += '⚠️ **RESULT: Cross-device sync has issues**\n\n';
+        message += '❌ Competition was not properly saved to Firebase\n';
+        message += `📝 **Error:** ${testResult.message}\n\n`;
+        message += '**Troubleshooting Steps:**\n';
+        message += '1. Check your internet connection\n';
+        message += '2. Verify Firebase configuration\n';
+        message += '3. Run System Diagnostics for more details\n';
+        message += '4. Try the "Initialize Students in Firebase" button';
+      }
+      
+      alert(message);
+      
+    } catch (error) {
+      console.error('Error testing cross-device sync:', error);
+      alert(`❌ Error testing cross-device sync: ${error.message}`);
+    } finally {
+      setIsTestingCrossDevice(false);
       // Refresh dashboard data
       await loadDashboardData();
     }
@@ -571,6 +609,33 @@ Check console for detailed logs.`);
                     className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isTestingRealTime ? 'Testing Real-Time Updates...' : 'Test Real-Time Updates'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Cross-Device Sync Test */}
+          <div className="mt-6">
+            <div className="card bg-orange-50 border-orange-200">
+              <div className="flex items-start space-x-4">
+                <div className="p-2 bg-orange-100 rounded-full">
+                  <span className="text-orange-600 text-xl">📱</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-orange-900 mb-2">
+                    Test Cross-Device Sync
+                  </h3>
+                  <p className="text-sm text-orange-700 mb-4">
+                    Test if competitions sync properly across different devices. This will create a test competition, save it to Firebase, verify it's there, then clean it up.
+                  </p>
+                  
+                  <button
+                    onClick={handleTestCrossDeviceSync}
+                    disabled={isTestingCrossDevice}
+                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isTestingCrossDevice ? 'Testing Cross-Device Sync...' : 'Test Cross-Device Sync'}
                   </button>
                 </div>
               </div>

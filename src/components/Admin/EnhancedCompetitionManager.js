@@ -291,6 +291,11 @@ const EnhancedCompetitionManager = () => {
     try {
       await hybridStorage.addCompetition(competition);
       console.log('✅ Competition added successfully with participants:', competition.participants.length);
+      
+      // Force immediate sync to Firebase for cross-device visibility
+      console.log('🔄 Forcing sync to Firebase...');
+      await hybridStorage.forceSync();
+      console.log('✅ Sync to Firebase completed');
     } catch (error) {
       console.error('❌ Error adding competition:', error);
       alert(`❌ Error adding competition: ${error.message}`);

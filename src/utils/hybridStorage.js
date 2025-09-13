@@ -216,14 +216,20 @@ export const hybridStorage = {
 
   async addCompetition(competition) {
     // Always update localStorage first
+    console.log('💾 Saving competition to localStorage:', competition.name);
     const result = localStorageUtils.addCompetition(competition);
     
     if (useFirebase && isOnline) {
       try {
+        console.log('☁️ Saving competition to Firebase:', competition.name);
         await competitionsService.create(competition);
+        console.log('✅ Competition saved to Firebase successfully');
       } catch (error) {
-        console.error('Firebase error, data saved locally:', error);
+        console.error('❌ Firebase error saving competition, data saved locally:', error);
+        throw error; // Re-throw to let caller know about Firebase issues
       }
+    } else {
+      console.warn('⚠️ Firebase offline or disabled, competition saved locally only');
     }
     return result;
   },
@@ -635,6 +641,45 @@ export const clearAllCompetitionsAndAnnouncements = async () => {
   } catch (error) {
     console.error('Error clearing competitions and announcements:', error);
     throw error;
+  },
+
+  // Test cross-device sync by adding a test competition
+  async testCrossDeviceSync() {
+    const testCompetition = {
+      id: 'test-' + Date.now(),
+      name: 'Cross-Device Sync Test',
+      description: 'This is a test competition to verify sync',
+      category: 'Technical',
+      date: '2025-09-20',
+      time: '10:00',
+      venue: 'Test Venue',
+      participants: [],
+      status: 'upcoming',
+      results: []
+    };
+
+    try {
+      console.log('🧪 Testing cross-device sync...');
+      await this.addCompetition(testCompetition);
+      await this.forceSync();
+      
+      // Verify it was saved to Firebase
+      const competitions = await competitionsService.getAll();
+      const testExists = competitions.some(c => c.id === testCompetition.id);
+      
+      if (testExists) {
+        console.log('✅ Cross-device sync test PASSED');
+        // Clean up test competition
+        await this.deleteCompetition(testCompetition.id);
+        return { success: true, message: 'Cross-device sync is working correctly' };
+      } else {
+        console.log('❌ Cross-device sync test FAILED - competition not found in Firebase');
+        return { success: false, message: 'Competition was not saved to Firebase' };
+      }
+    } catch (error) {
+      console.error('❌ Cross-device sync test ERROR:', error);
+      return { success: false, message: `Sync test failed: ${error.message}` };
+    }
   }
 };
 
