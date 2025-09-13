@@ -174,6 +174,7 @@ const EnhancedCompetitionManager = () => {
         hybridStorage.getStudents()
       ]);
       console.log('📊 Loaded:', { competitions: competitionsData.length, students: studentsData.length });
+      console.log('👥 First few students:', studentsData.slice(0, 3));
       setCompetitions(competitionsData);
       setStudents(studentsData);
       // Update student records automatically
@@ -187,6 +188,11 @@ const EnhancedCompetitionManager = () => {
     e.preventDefault();
     
     console.log('🚀 Adding competition...');
+    console.log('📋 Current form state:', {
+      inputMethod,
+      selectedStudents: selectedStudents.length,
+      newCompetition
+    });
     
     // Get values from refs instead of state to avoid re-render issues
     const competitionName = nameInputRef.current?.value || '';
@@ -202,17 +208,37 @@ const EnhancedCompetitionManager = () => {
       time: newCompetition.time
     });
     
+    // Validate required fields
+    if (!competitionName.trim()) {
+      alert('❌ Competition name is required!');
+      return;
+    }
+    
+    if (!newCompetition.date) {
+      alert('❌ Competition date is required!');
+      return;
+    }
+    
+    if (!newCompetition.time) {
+      alert('❌ Competition time is required!');
+      return;
+    }
+    
     let participants = [];
     
     if (inputMethod === 'checkboxes') {
+      console.log('👥 Processing checkbox selection:', selectedStudents);
+      console.log('📚 Available students:', students.length);
+      
       // Use selected students from checkboxes
       participants = selectedStudents
         .map(studentId => {
           const student = students.find(s => s.id === studentId);
           if (!student) {
-            console.error('Student not found for ID:', studentId);
+            console.error('❌ Student not found for ID:', studentId);
             return null;
           }
+          console.log('✅ Found student:', student.name, student.code);
           return {
             id: student.id,
             name: student.name,
@@ -226,6 +252,8 @@ const EnhancedCompetitionManager = () => {
           };
         })
         .filter(participant => participant !== null);
+      
+      console.log('🎯 Final participants:', participants.length);
     } else {
       // Parse participant names from manual input
       const participantNames = newCompetition.participantNames
@@ -260,8 +288,14 @@ const EnhancedCompetitionManager = () => {
     
     console.log('🎯 Final competition object:', competition);
     
-    await hybridStorage.addCompetition(competition);
-    console.log('Added competition with participants:', competition.participants);
+    try {
+      await hybridStorage.addCompetition(competition);
+      console.log('✅ Competition added successfully with participants:', competition.participants.length);
+    } catch (error) {
+      console.error('❌ Error adding competition:', error);
+      alert(`❌ Error adding competition: ${error.message}`);
+      return;
+    }
     
     // Reset form
     setNewCompetition({
