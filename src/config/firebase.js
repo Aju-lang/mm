@@ -4,13 +4,13 @@ import { getAuth } from 'firebase/auth';
 
 // Firebase configuration
 const firebaseConfig = {
-  // You'll need to replace these with your actual Firebase config
-  apiKey: "your-api-key-here",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-app-id"
+  apiKey: "AIzaSyCR4VcrTEOn-iu5Fohv1D2dYiW63TrXlqQ",
+  authDomain: "rendezvous-25.firebaseapp.com",
+  projectId: "rendezvous-25",
+  storageBucket: "rendezvous-25.firebasestorage.app",
+  messagingSenderId: "149073824849",
+  appId: "1:149073824849:web:1aafd9bebefdacd6137c70",
+  measurementId: "G-PD44DPRL82"
 };
 
 // Initialize Firebase
