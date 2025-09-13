@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getLeaderboard, getTeamLeaderboard } from '../../utils/localStorage';
+import { getLeaderboard, getTeamLeaderboard, updateStudentRecords } from '../../utils/localStorage';
 
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -11,6 +11,9 @@ const Leaderboard = () => {
   }, []);
 
   const loadLeaderboards = () => {
+    // Update student records first
+    updateStudentRecords();
+    
     // Individual leaderboard
     const individualData = getLeaderboard(10);
     setLeaderboard(individualData);

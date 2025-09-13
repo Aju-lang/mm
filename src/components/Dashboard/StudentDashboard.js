@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import CountdownTimer from './CountdownTimer';
 import AnnouncementTicker from './AnnouncementTicker';
 import StudentSearch from './StudentSearch';
 import CompetitionsList from './CompetitionsList';
 import Leaderboard from './Leaderboard';
 import Gallery from './Gallery';
-import { getFestivalData } from '../../utils/localStorage';
+import { getFestivalData, updateStudentRecords } from '../../utils/localStorage';
 
 const StudentDashboard = ({ currentView }) => {
   const festivalData = getFestivalData();
+
+  // Update student records when dashboard loads
+  useEffect(() => {
+    updateStudentRecords();
+  }, [currentView]);
 
   const renderContent = () => {
     switch (currentView) {
