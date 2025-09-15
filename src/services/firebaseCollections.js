@@ -314,6 +314,47 @@ galleryCollection.getByCategory = async function(category) {
   }
 };
 
+// Add Base64 image to gallery
+galleryCollection.addBase64Image = async function(imageData) {
+  try {
+    const galleryItem = {
+      title: imageData.title,
+      description: imageData.description || '',
+      category: imageData.category || 'General',
+      base64Image: imageData.base64,
+      fileName: imageData.fileName,
+      fileSize: imageData.fileSize,
+      fileType: imageData.fileType,
+      compressed: imageData.compressed || false,
+      uploadedBy: imageData.uploadedBy || 'admin',
+      uploadedAt: imageData.uploadedAt || new Date().toISOString()
+    };
+    
+    const docId = await this.create(galleryItem);
+    console.log(`✅ Base64 image added to gallery: ${imageData.fileName}`);
+    return docId;
+  } catch (error) {
+    console.error('Error adding Base64 image to gallery:', error);
+    throw error;
+  }
+};
+
+// Get gallery images with Base64 data
+galleryCollection.getAllWithImages = async function() {
+  try {
+    const items = await this.getAll();
+    console.log(`📸 Retrieved ${items.length} gallery items with Base64 images`);
+    return items.map(item => ({
+      ...item,
+      src: item.base64Image, // Map base64Image to src for compatibility
+      imageUrl: item.base64Image // Alternative property name
+    }));
+  } catch (error) {
+    console.error('Error getting gallery with images:', error);
+    throw error;
+  }
+};
+
 export default {
   students: studentsCollection,
   competitions: competitionsCollection,

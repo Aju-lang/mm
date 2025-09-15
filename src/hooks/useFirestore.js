@@ -174,7 +174,14 @@ export const useAnnouncements = () => {
 
 // Hook for gallery data with real-time updates
 export const useGallery = () => {
-  const { data: gallery, loading, error, refresh } = useFirestoreCollection('gallery');
+  const { data: rawGallery, loading, error, refresh } = useFirestoreCollection('gallery');
+
+  // Transform gallery data to include src property for compatibility
+  const gallery = rawGallery.map(item => ({
+    ...item,
+    src: item.base64Image || item.imageUrl || item.src, // Support multiple formats
+    imageUrl: item.base64Image || item.imageUrl || item.src
+  }));
 
   const getGalleryByCategory = useCallback((category) => {
     if (category === 'All') return gallery;
@@ -186,13 +193,23 @@ export const useGallery = () => {
     return ['All', ...categories];
   }, [gallery]);
 
+  const getGalleryStats = useCallback(() => {
+    return {
+      total: gallery.length,
+      categories: new Set(gallery.map(item => item.category)).size,
+      compressed: gallery.filter(item => item.compressed).length,
+      storageType: 'Base64 (Firestore)'
+    };
+  }, [gallery]);
+
   return {
     gallery,
     loading,
     error,
     refresh,
     getGalleryByCategory,
-    getCategories
+    getCategories,
+    getGalleryStats
   };
 };
 

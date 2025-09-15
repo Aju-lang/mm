@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Gradient Template</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        .poster {
+            width: 800px;
+            height: 1200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .festival-logo {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .festival-name {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .results-section {
+            padding: 40px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .result-item {
+            background: rgba(255, 255, 255, 0.95);
+            margin-bottom: 20px;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            color: #333;
+        }
+        
+        .position {
+            font-size: 48px;
+            font-weight: bold;
+            width: 80px;
+            text-align: center;
+        }
+        
+        .position.first { color: #FFD700; }
+        .position.second { color: #C0C0C0; }
+        .position.third { color: #CD7F32; }
+    </style>
+</head>
+<body>
+    <div class="poster">
+        <div class="header">
+            <div class="festival-logo">🎭</div>
+            <div class="festival-name">RENDEZVOUS 2025</div>
+            <div class="competition-title">Competition Results</div>
+        </div>
+        
+        <div class="results-section">
+            <div class="result-item">
+                <div class="position first">1st</div>
+                <div class="student-info">
+                    <div class="student-name">Winner Name</div>
+                    <div class="student-details">Code • Team</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

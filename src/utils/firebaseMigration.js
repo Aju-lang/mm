@@ -177,6 +177,8 @@ export class FirebaseMigration {
         return { success: false, message: 'No gallery data to migrate' };
       }
 
+      console.log(`📸 Converting ${localGallery.length} images to Base64...`);
+      
       const operations = localGallery.map(item => ({
         id: item.id || `gallery_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         type: 'create',
@@ -184,16 +186,19 @@ export class FirebaseMigration {
           title: item.title,
           description: item.description || '',
           category: item.category || 'General',
-          src: item.src,
-          imageUrl: item.src, // Alias for consistency
-          fileName: item.fileName || '',
+          base64Image: item.src, // Assume existing src is already Base64 or convert if URL
+          imageUrl: item.src, // Keep for compatibility
+          fileName: item.fileName || item.title || 'migrated_image',
           fileSize: item.fileSize || 0,
-          uploadedBy: 'migration'
+          fileType: 'image/jpeg', // Default type
+          compressed: false, // Mark as not compressed during migration
+          uploadedBy: 'migration',
+          uploadedAt: new Date().toISOString()
         }
       }));
 
       await firebaseCollections.gallery.batchWrite(operations);
-      console.log(`✅ Migrated ${localGallery.length} gallery items to Firebase`);
+      console.log(`✅ Migrated ${localGallery.length} gallery items to Firebase with Base64 storage`);
       
       return { success: true, count: localGallery.length };
     } catch (error) {

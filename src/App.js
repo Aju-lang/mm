@@ -8,7 +8,7 @@ import AdminDashboard from './components/Admin/AdminDashboard';
 import EnhancedCompetitionManager from './components/Admin/EnhancedCompetitionManager';
 import StudentManager from './components/Admin/StudentManager';
 import PosterCreator from './components/Admin/PosterCreator';
-import GalleryManager from './components/Admin/GalleryManager';
+import FirebaseGalleryManager from './components/Admin/FirebaseGalleryManager';
 import AnnouncementManager from './components/Admin/AnnouncementManager';
 import ResultsManager from './components/Admin/ResultsManager';
 import EnhancedAnnouncements from './components/Dashboard/EnhancedAnnouncements';
@@ -120,7 +120,7 @@ function AppContent() {
       case 'poster-creator':
         return <PosterCreator />;
       case 'gallery-admin':
-        return <GalleryManager />;
+        return <FirebaseGalleryManager />;
       case 'announcements-admin':
         return <AnnouncementManager />;
       case 'results-admin':
