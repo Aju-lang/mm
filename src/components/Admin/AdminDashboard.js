@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { hybridStorage, updateStudentRecords, forceInitializeStudents, clearAllCompetitionsAndAnnouncements } from '../../utils/hybridStorage';
+import { hybridStorage, updateStudentRecords, forceInitializeStudents } from '../../utils/hybridStorage';
 import DataReset from './DataReset';
 
 const AdminDashboard = () => {
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
 
     setIsClearingCompetitions(true);
     try {
-      await clearAllCompetitionsAndAnnouncements();
+      await hybridStorage.clearAllCompetitionsAndAnnouncements();
       await loadDashboardData(); // Refresh the dashboard
       alert('✅ All competitions and announcements cleared successfully!');
     } catch (error) {

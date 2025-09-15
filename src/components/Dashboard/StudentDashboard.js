@@ -1,29 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import CountdownTimer from './CountdownTimer';
 import AnnouncementTicker from './AnnouncementTicker';
 import StudentSearch from './StudentSearch';
 import CompetitionsList from './CompetitionsList';
 import Leaderboard from './Leaderboard';
 import Gallery from './Gallery';
-import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
+import { useFestivalData, useDashboardStats, useAnnouncements } from '../../hooks/useFirestore';
 
 const StudentDashboard = ({ currentView }) => {
-  const [festivalData, setFestivalData] = useState({
-    name: 'RENDEZVOUS 2025',
-    logo: '🎭',
-    startDate: '2025-09-19',
-    endDate: '2025-09-20',
-    venue: 'MARKAZ MIHRAJ MALAYIL'
-  });
-  
-  const [stats, setStats] = useState({
-    totalCompetitions: 0,
-    totalStudents: 0,
-    daysToGo: 0,
-    completedCompetitions: 0,
-    activeAnnouncements: 0,
-    galleryImages: 0
-  });
+  const { festivalData } = useFestivalData();
+  const stats = useDashboardStats();
+  const { getRecentAnnouncements } = useAnnouncements();
 
   // Update student records when dashboard loads
   useEffect(() => {
@@ -151,15 +138,15 @@ const StudentDashboard = ({ currentView }) => {
         return <Gallery />;
       default:
         return (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {/* Festival Info & Countdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="card">
-                <div className="text-center mb-6">
-                  <div className="text-6xl mb-4">{festivalData.logo}</div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{festivalData.name}</h1>
-                  <p className="text-gray-600 mb-4">{festivalData.description}</p>
-                  <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
+            <div className="grid-responsive-2">
+              <div className="card-responsive">
+                <div className="text-center mb-4 sm:mb-6">
+                  <div className="text-4xl sm:text-5xl lg:text-6xl mb-3 sm:mb-4">{festivalData.logo}</div>
+                  <h1 className="text-responsive-lg text-gray-900 mb-2">{festivalData.name}</h1>
+                  <p className="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">{festivalData.description}</p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-500">
                     <span>📅 {festivalData.startDate} - {festivalData.endDate}</span>
                     <span>📍 {festivalData.venue}</span>
                   </div>
@@ -172,46 +159,46 @@ const StudentDashboard = ({ currentView }) => {
             <StudentSearch />
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
-              <div className="card text-center">
-                <div className="text-3xl mb-2">🎯</div>
-                <div className="text-2xl font-bold text-primary-600">{stats.totalCompetitions}</div>
-                <div className="text-sm text-gray-600">Total Competitions</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
+              <div className="card-responsive text-center">
+                <div className="text-2xl sm:text-3xl mb-2">🎯</div>
+                <div className="text-xl sm:text-2xl font-bold text-primary-600">{stats.totalCompetitions}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Total Competitions</div>
               </div>
-              <div className="card text-center">
-                <div className="text-3xl mb-2">👥</div>
-                <div className="text-2xl font-bold text-secondary-600">{stats.totalStudents}</div>
-                <div className="text-sm text-gray-600">Registered Students</div>
+              <div className="card-responsive text-center">
+                <div className="text-2xl sm:text-3xl mb-2">👥</div>
+                <div className="text-xl sm:text-2xl font-bold text-secondary-600">{stats.totalStudents}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Registered Students</div>
               </div>
-              <div className="card text-center">
-                <div className="text-3xl mb-2">⏰</div>
-                <div className="text-2xl font-bold text-green-600">{stats.daysToGo}</div>
-                <div className="text-sm text-gray-600">Days to Go</div>
+              <div className="card-responsive text-center">
+                <div className="text-2xl sm:text-3xl mb-2">⏰</div>
+                <div className="text-xl sm:text-2xl font-bold text-green-600">{stats.daysToGo}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Days to Go</div>
               </div>
-              <div className="card text-center">
-                <div className="text-3xl mb-2">✅</div>
-                <div className="text-2xl font-bold text-purple-600">{stats.completedCompetitions}</div>
-                <div className="text-sm text-gray-600">Completed Events</div>
+              <div className="card-responsive text-center">
+                <div className="text-2xl sm:text-3xl mb-2">✅</div>
+                <div className="text-xl sm:text-2xl font-bold text-purple-600">{stats.completedCompetitions}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Completed Events</div>
               </div>
-              <div className="card text-center">
-                <div className="text-3xl mb-2">📢</div>
-                <div className="text-2xl font-bold text-yellow-600">{stats.activeAnnouncements}</div>
-                <div className="text-sm text-gray-600">Active Announcements</div>
+              <div className="card-responsive text-center">
+                <div className="text-2xl sm:text-3xl mb-2">📢</div>
+                <div className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.activeAnnouncements}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Active Announcements</div>
               </div>
-              <div className="card text-center">
-                <div className="text-3xl mb-2">📸</div>
-                <div className="text-2xl font-bold text-pink-600">{stats.galleryImages}</div>
-                <div className="text-sm text-gray-600">Gallery Images</div>
+              <div className="card-responsive text-center">
+                <div className="text-2xl sm:text-3xl mb-2">📸</div>
+                <div className="text-xl sm:text-2xl font-bold text-pink-600">{stats.galleryImages}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Gallery Images</div>
               </div>
             </div>
 
             {/* Recent Updates */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-900">📢 Recent Updates</h3>
+            <div className="card-responsive">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-2 sm:space-y-0">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">📢 Recent Updates</h3>
                 <button
                   onClick={loadStats}
-                  className="btn-outline text-sm"
+                  className="btn-outline-mobile text-sm"
                 >
                   Refresh
                 </button>
@@ -228,7 +215,7 @@ const StudentDashboard = ({ currentView }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <AnnouncementTicker />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto container-responsive">
         {renderContent()}
       </div>
     </div>

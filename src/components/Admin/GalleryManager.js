@@ -40,7 +40,7 @@ const GalleryManager = () => {
     }
   };
 
-  const handleUpload = (e) => {
+  const handleUpload = async (e) => {
     e.preventDefault();
     console.log('Upload attempt - selectedFile:', selectedFile, 'title:', uploadData.title);
     
@@ -56,7 +56,7 @@ const GalleryManager = () => {
 
     // Convert file to base64 for storage
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const imageData = {
         title: uploadData.title,
         category: uploadData.category,

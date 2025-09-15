@@ -585,12 +585,11 @@ export const resetStudentDataToOriginal = async () => {
   } catch (error) {
     console.error('Error resetting student data:', error);
     throw error;
-  }
-};
+  },
 
-// Force initialize student data - useful for debugging
-export const forceInitializeStudents = async () => {
-  try {
+  // Force initialize student data - useful for debugging
+  async forceInitializeStudents() {
+    try {
     console.log('Force initializing students...');
     
     // Check if Firebase is available
@@ -642,41 +641,42 @@ export const forceInitializeStudents = async () => {
     
     console.log('Force initialization complete!');
     return localStudents;
-  } catch (error) {
-    console.error('Error force initializing students:', error);
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      stack: error.stack
-    });
-    throw error;
-  }
-};
+    } catch (error) {
+      console.error('Error force initializing students:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      throw error;
+    }
+  },
 
-// Clear all competitions and announcements (useful for fresh start)
-export const clearAllCompetitionsAndAnnouncements = async () => {
-  try {
-    console.log('Clearing all competitions and announcements...');
-    
-    // Clear from Firebase
-    const competitions = await competitionsService.getAll();
-    for (const competition of competitions) {
-      await competitionsService.delete(competition.id);
+  // Clear all competitions and announcements (useful for fresh start)
+  async clearAllCompetitionsAndAnnouncements() {
+    try {
+      console.log('Clearing all competitions and announcements...');
+      
+      // Clear from Firebase
+      const competitions = await competitionsService.getAll();
+      for (const competition of competitions) {
+        await competitionsService.delete(competition.id);
+      }
+      
+      const announcements = await announcementsService.getAll();
+      for (const announcement of announcements) {
+        await announcementsService.delete(announcement.id);
+      }
+      
+      // Clear from localStorage
+      localStorageUtils.setCompetitions([]);
+      localStorageUtils.setAnnouncements([]);
+      
+      console.log('All competitions and announcements cleared successfully');
+    } catch (error) {
+      console.error('Error clearing competitions and announcements:', error);
+      throw error;
     }
-    
-    const announcements = await announcementsService.getAll();
-    for (const announcement of announcements) {
-      await announcementsService.delete(announcement.id);
-    }
-    
-    // Clear from localStorage
-    localStorageUtils.setCompetitions([]);
-    localStorageUtils.setAnnouncements([]);
-    
-    console.log('All competitions and announcements cleared successfully');
-  } catch (error) {
-    console.error('Error clearing competitions and announcements:', error);
-    throw error;
   },
 
   // Real-time listeners for cross-device sync

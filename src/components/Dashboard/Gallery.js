@@ -77,28 +77,28 @@ const Gallery = () => {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden mx-4">
           <div className="relative">
             <img
               src={image.src}
               alt={image.title}
-              className="w-full h-96 object-cover"
+              className="w-full h-64 sm:h-80 lg:h-96 object-cover"
             />
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-75 transition-colors"
+              className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black bg-opacity-50 text-white rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-opacity-75 transition-colors text-sm sm:text-base"
             >
               ×
             </button>
           </div>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-2xl font-bold text-gray-900">{image.title}</h3>
-              <span className="badge badge-primary">
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{image.title}</h3>
+              <span className="badge badge-primary self-start">
                 {getCategoryIcon(image.category)} {image.category}
               </span>
             </div>
-            <p className="text-gray-700">{image.description}</p>
+            <p className="text-gray-700 text-sm sm:text-base">{image.description}</p>
           </div>
         </div>
       </div>
@@ -106,21 +106,21 @@ const Gallery = () => {
   };
 
   return (
-    <div className="card">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">📸 Festival Gallery</h2>
-        <div className="text-sm text-gray-500">
+    <div className="card-responsive">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">📸 Festival Gallery</h2>
+        <div className="text-xs sm:text-sm text-gray-500">
           {filteredImages.length} {filteredImages.length === 1 ? 'photo' : 'photos'}
         </div>
       </div>
 
       {/* Category Filter */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
         {categories.map((category) => (
           <button
             key={category}
             onClick={() => setSelectedCategory(category)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
               selectedCategory === category
                 ? 'bg-primary-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -132,7 +132,7 @@ const Gallery = () => {
       </div>
 
       {/* Images Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid-responsive">
         {filteredImages.map((image) => (
           <div
             key={image.id}
@@ -143,15 +143,15 @@ const Gallery = () => {
               <img
                 src={image.src}
                 alt={image.title}
-                className="w-full h-48 object-cover group-hover:brightness-75 transition-all duration-300"
+                className="w-full h-36 sm:h-48 object-cover group-hover:brightness-75 transition-all duration-300"
               />
             </div>
             
             {/* Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                <h3 className="font-semibold text-lg mb-1">{image.title}</h3>
-                <p className="text-sm text-gray-200">{image.description}</p>
+              <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 text-white">
+                <h3 className="font-semibold text-sm sm:text-lg mb-1">{image.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-200 line-clamp-2">{image.description}</p>
                 <div className="mt-2">
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-white bg-opacity-20 text-white">
                     {getCategoryIcon(image.category)} {image.category}

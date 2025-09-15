@@ -1,30 +1,36 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
-// Firebase configuration
+// Firebase configuration - use environment variables in production
 const firebaseConfig = {
-  apiKey: "AIzaSyCR4VcrTEOn-iu5Fohv1D2dYiW63TrXlqQ",
-  authDomain: "rendezvous-25.firebaseapp.com",
-  projectId: "rendezvous-25",
-  storageBucket: "rendezvous-25.firebasestorage.app",
-  messagingSenderId: "149073824849",
-  appId: "1:149073824849:web:1aafd9bebefdacd6137c70",
-  measurementId: "G-PD44DPRL82"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyCR4VcrTEOn-iu5Fohv1D2dYiW63TrXlqQ",
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "rendezvous-25.firebaseapp.com",
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "rendezvous-25",
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "rendezvous-25.firebasestorage.app",
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "149073824849",
+  appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:149073824849:web:1aafd9bebefdacd6137c70",
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || "G-PD44DPRL82"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore
+// Initialize services
 export const db = getFirestore(app);
-
-// Initialize Auth
 export const auth = getAuth(app);
+export const storage = getStorage(app);
 
-// For development, you can use the emulator
-// if (process.env.NODE_ENV === 'development') {
-//   connectFirestoreEmulator(db, 'localhost', 8080);
-// }
+// For development, you can use emulators
+if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_USE_EMULATORS === 'true') {
+  try {
+    connectFirestoreEmulator(db, 'localhost', 8080);
+    connectAuthEmulator(auth, 'http://localhost:9099');
+    connectStorageEmulator(storage, 'localhost', 9199);
+  } catch (error) {
+    console.log('Emulators already connected or not available');
+  }
+}
 
 export default app;
