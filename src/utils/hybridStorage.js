@@ -1,11 +1,4 @@
-import {
-  studentsService,
-  competitionsService,
-  announcementsService,
-  galleryService,
-  festivalDataService,
-  initializeFirebaseData
-} from './firebaseService';
+import firebaseCollections from './firebaseCollections';
 
 // Fallback to localStorage if Firebase is not available
 import * as localStorageUtils from './localStorage';
@@ -585,11 +578,12 @@ export const resetStudentDataToOriginal = async () => {
   } catch (error) {
     console.error('Error resetting student data:', error);
     throw error;
-  },
+  }
+};
 
-  // Force initialize student data - useful for debugging
-  async forceInitializeStudents() {
-    try {
+// Force initialize student data - useful for debugging
+export const forceInitializeStudents = async () => {
+  try {
     console.log('Force initializing students...');
     
     // Check if Firebase is available
@@ -602,11 +596,11 @@ export const resetStudentDataToOriginal = async () => {
     
     // Clear existing Firebase data
     console.log('Clearing existing students from Firebase...');
-    const existingStudents = await studentsService.getAll();
+    const existingStudents = await firebaseCollections.students.getAll();
     console.log(`Found ${existingStudents.length} existing students in Firebase`);
     
     for (const student of existingStudents) {
-      await studentsService.delete(student.id);
+      await firebaseCollections.students.delete(student.id);
       console.log(`Deleted: ${student.name || student.id}`);
     }
     
@@ -627,7 +621,7 @@ export const resetStudentDataToOriginal = async () => {
     for (let i = 0; i < localStudents.length; i++) {
       const student = localStudents[i];
       try {
-        await studentsService.create(student);
+        await firebaseCollections.students.create(student);
         console.log(`Added (${i + 1}/${localStudents.length}): ${student.name} (${student.code})`);
       } catch (studentError) {
         console.error(`Failed to add student ${student.name}:`, studentError);
@@ -636,36 +630,36 @@ export const resetStudentDataToOriginal = async () => {
     }
     
     // Verify the students were added
-    const finalStudents = await studentsService.getAll();
+    const finalStudents = await firebaseCollections.students.getAll();
     console.log(`Verification: ${finalStudents.length} students now in Firebase`);
     
     console.log('Force initialization complete!');
     return localStudents;
-    } catch (error) {
-      console.error('Error force initializing students:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack
-      });
-      throw error;
-    }
-  },
+  } catch (error) {
+    console.error('Error force initializing students:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+    throw error;
+  }
+};
 
-  // Clear all competitions and announcements (useful for fresh start)
-  async clearAllCompetitionsAndAnnouncements() {
+// Clear all competitions and announcements (useful for fresh start)
+export const clearAllCompetitionsAndAnnouncements = async () => {
     try {
       console.log('Clearing all competitions and announcements...');
       
       // Clear from Firebase
-      const competitions = await competitionsService.getAll();
+      const competitions = await firebaseCollections.competitions.getAll();
       for (const competition of competitions) {
-        await competitionsService.delete(competition.id);
+        await firebaseCollections.competitions.delete(competition.id);
       }
       
-      const announcements = await announcementsService.getAll();
+      const announcements = await firebaseCollections.announcements.getAll();
       for (const announcement of announcements) {
-        await announcementsService.delete(announcement.id);
+        await firebaseCollections.announcements.delete(announcement.id);
       }
       
       // Clear from localStorage
@@ -683,7 +677,7 @@ export const resetStudentDataToOriginal = async () => {
   onStudentsChange(callback) {
     if (useFirebase && isOnline) {
       try {
-        return studentsService.onSnapshot(callback);
+        return firebaseCollections.students.onSnapshot(callback);
       } catch (error) {
         console.error('Error setting up students listener:', error);
         return () => {}; // Return empty unsubscribe function
@@ -707,7 +701,7 @@ export const resetStudentDataToOriginal = async () => {
   onGalleryChange(callback) {
     if (useFirebase && isOnline) {
       try {
-        return galleryService.onSnapshot(callback);
+        return firebaseCollections.gallery.onSnapshot(callback);
       } catch (error) {
         console.error('Error setting up gallery listener:', error);
         return () => {}; // Return empty unsubscribe function
@@ -719,7 +713,7 @@ export const resetStudentDataToOriginal = async () => {
   onAnnouncementsChange(callback) {
     if (useFirebase && isOnline) {
       try {
-        return announcementsService.onSnapshot(callback);
+        return firebaseCollections.announcements.onSnapshot(callback);
       } catch (error) {
         console.error('Error setting up announcements listener:', error);
         return () => {}; // Return empty unsubscribe function
