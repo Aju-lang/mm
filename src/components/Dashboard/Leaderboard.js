@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { hybridStorage, updateStudentRecords } from '../../utils/hybridStorage';
+import { useStudents } from '../../hooks/useFirestore';
 
 // Helper functions for leaderboard calculation
-const getLeaderboard = async (limit = 10) => {
-  const students = await hybridStorage.getStudents();
+const getLeaderboard = (students, limit = 10) => {
   return students
     .sort((a, b) => (b.points || 0) - (a.points || 0))
     .slice(0, limit);
 };
 
-const getTeamLeaderboard = async () => {
-  const students = await hybridStorage.getStudents();
+const getTeamLeaderboard = (students) => {
   const teamStats = students.reduce((acc, student) => {
     const team = student.team || 'Unknown';
     if (!acc[team]) {
@@ -35,37 +33,12 @@ const getTeamLeaderboard = async () => {
 };
 
 const Leaderboard = () => {
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [teamLeaderboard, setTeamLeaderboard] = useState([]);
+  const { students, getLeaderboard: getStudentLeaderboard, getTeamLeaderboard: getTeamLeaderboardData } = useStudents();
   const [activeTab, setActiveTab] = useState('individual');
 
-  useEffect(() => {
-    loadLeaderboards();
-    
-    // Set up real-time listener for automatic updates
-    const unsubscribe = hybridStorage.onStudentsChange(() => {
-      loadLeaderboards();
-    });
-    
-    return () => unsubscribe();
-  }, []);
-
-  const loadLeaderboards = async () => {
-    try {
-      // Update student records first
-      await updateStudentRecords();
-      
-      // Individual leaderboard
-      const individualData = await getLeaderboard(10);
-      setLeaderboard(individualData);
-
-      // Team leaderboard
-      const teamData = await getTeamLeaderboard();
-      setTeamLeaderboard(teamData);
-    } catch (error) {
-      console.error('Error loading leaderboards:', error);
-    }
-  };
+  // Calculate leaderboards from current student data
+  const leaderboard = getStudentLeaderboard(10);
+  const teamLeaderboard = getTeamLeaderboardData();
 
   const getRankEmoji = (rank) => {
     const emojis = { 1: '🥇', 2: '🥈', 3: '🥉' };
@@ -195,12 +168,9 @@ const Leaderboard = () => {
     <div className="card">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">🏆 Leaderboard</h2>
-        <button
-          onClick={loadLeaderboards}
-          className="btn-outline text-sm"
-        >
-          Refresh
-        </button>
+        <div className="text-sm text-gray-500">
+          Live Updates
+        </div>
       </div>
 
       {/* Tabs */}

@@ -1,64 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import hybridStorage from '../../utils/hybridStorage';
+import { useGallery } from '../../hooks/useFirestore';
 
 const Gallery = () => {
-  const [images, setImages] = useState([]);
+  const { gallery: images, getGalleryByCategory, getCategories } = useGallery();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedImage, setSelectedImage] = useState(null);
 
-  useEffect(() => {
-    loadImages();
-    
-    // Set up real-time listener for gallery updates
-    const unsubscribeGallery = hybridStorage.onGalleryChange((data) => {
-      console.log('🖼️ Gallery: Images updated via Firebase real-time', data.length);
-      loadImages();
-    });
-
-    return () => {
-      unsubscribeGallery();
-    };
-  }, []);
-
-  const loadImages = async () => {
-    const galleryImages = await hybridStorage.getGallery();
-    
-    // If no uploaded images, show some default placeholder images
-    if (galleryImages.length === 0) {
-      const defaultImages = [
-        {
-          id: 1,
-          title: 'Opening Ceremony',
-          category: 'Events',
-          src: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop',
-          description: 'Grand opening of RENDEZVOUS 2025'
-        },
-        {
-          id: 2,
-          title: 'Coding Challenge',
-          category: 'Technical',
-          src: 'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=400&h=300&fit=crop',
-          description: 'Students competing in the coding challenge'
-        },
-        {
-          id: 3,
-          title: 'Cultural Performance',
-          category: 'Cultural',
-          src: 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=400&h=300&fit=crop',
-          description: 'Amazing cultural performances by students'
-        }
-      ];
-      setImages(defaultImages);
-    } else {
-      setImages(galleryImages);
-    }
-  };
-
-  const categories = ['All', ...new Set(images.map(img => img.category))];
-  
-  const filteredImages = selectedCategory === 'All' 
-    ? images 
-    : images.filter(img => img.category === selectedCategory);
+  // Get filtered images based on selected category
+  const filteredImages = getGalleryByCategory(selectedCategory);
+  const categories = getCategories();
 
   const getCategoryIcon = (category) => {
     const icons = {

@@ -1,32 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import hybridStorage from '../../utils/hybridStorage';
+import { useCompetitions } from '../../hooks/useFirestore';
 
 const CompetitionsList = () => {
-  const [competitions, setCompetitions] = useState([]);
-  const [competitionsByCategory, setCompetitionsByCategory] = useState({});
+  const { competitions, getCompetitionsByCategory } = useCompetitions();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedCompetition, setSelectedCompetition] = useState(null);
 
-  useEffect(() => {
-    loadCompetitions();
-    
-    // Set up real-time listener for competition updates
-    const unsubscribeCompetitions = hybridStorage.onCompetitionsChange((data) => {
-      console.log('🏆 CompetitionsList: Competitions updated via Firebase real-time', data.length);
-      loadCompetitions();
-    });
-
-    return () => {
-      unsubscribeCompetitions();
-    };
-  }, []);
-
-  const loadCompetitions = async () => {
-    const allCompetitions = await hybridStorage.getCompetitions();
-    const categorized = await hybridStorage.getCompetitionsByCategory();
-    setCompetitions(allCompetitions);
-    setCompetitionsByCategory(categorized);
-  };
+  // Get filtered competitions based on selected category
+  const filteredCompetitions = selectedCategory === 'all' 
+    ? competitions 
+    : getCompetitionsByCategory(selectedCategory);
 
   const getStatusBadge = (status) => {
     const badges = {
@@ -57,11 +40,7 @@ const CompetitionsList = () => {
     return icons[category] || '🏆';
   };
 
-  const filteredCompetitions = selectedCategory === 'all' 
-    ? competitions 
-    : competitions.filter(comp => comp.category === selectedCategory);
-
-  const categories = ['all', ...Object.keys(competitionsByCategory)];
+  const categories = ['all', ...new Set(competitions.map(comp => comp.category))];
 
   const CompetitionModal = ({ competition, onClose }) => {
     if (!competition) return null;
@@ -153,12 +132,9 @@ const CompetitionsList = () => {
     <div className="card">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">🎯 Competitions</h2>
-        <button
-          onClick={loadCompetitions}
-          className="btn-outline text-sm"
-        >
-          Refresh
-        </button>
+        <div className="text-sm text-gray-500">
+          Live Updates
+        </div>
       </div>
 
       {/* Category Filter */}
